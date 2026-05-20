@@ -1,229 +1,229 @@
-FirstCommitActúa como un Software Architect Senior especializado en aplicaciones web modernas y escalables.
+# 🐾 VetChain
 
-Quiero que desarrolles la estructura base completa de un sistema llamado “VetChain”, una plataforma web enfocada en el bienestar animal, tenencia responsable de mascotas, adopción y difusión comunitaria.
+VetChain es una plataforma web comunitaria enfocada en promover la tenencia responsable y el bienestar animal mediante educación, participación social y herramientas digitales.
 
-# STACK TECNOLÓGICO
+La plataforma permite a los usuarios:
+- reportar mascotas perdidas,
+- publicar mascotas en adopción,
+- participar en campañas comunitarias,
+- compartir acciones responsables,
+- acceder a contenido educativo,
+- y participar en sorteos mediante buenas acciones relacionadas con mascotas y medio ambiente.
 
-Frontend:
+---
 
-* React + Vite
-* React Router DOM
-* TailwindCSS
-* Axios
-* React Hook Form
-* Context API o Zustand para estado global
-* Arquitectura limpia y escalable
-* Componentización profesional
-* Responsive Design
-* ESLint configurado
+# 🚀 Objetivo del Proyecto
 
-Backend:
+El objetivo de VetChain es generar impacto social real mediante tecnología, incentivando el cuidado responsable de mascotas y la participación activa de la comunidad.
 
-* Node.js + Express
-* PostgreSQL con Supabase
-* Arquitectura por capas
-* JWT Authentication
-* Middleware de autenticación y manejo de errores
-* Variables de entorno con dotenv
-* API REST limpia
-* Validaciones
-* Seguridad básica (helmet, cors, rate limit)
+---
 
-Base de datos:
+# 🌎 Relación con los ODS
 
-* Supabase PostgreSQL
+## ODS Principal
+- ODS 3: Salud y bienestar
 
-# OBJETIVO DEL SISTEMA
+## ODS Complementarios
+- ODS 11: Ciudades y comunidades sostenibles
+- ODS 12: Producción y consumo responsables
 
-VetChain será una plataforma donde los usuarios podrán:
+---
 
-* registrarse e iniciar sesión,
-* publicar mascotas perdidas,
-* publicar mascotas en adopción,
-* acceder a contenido educativo,
-* participar en eventos o campañas,
-* visualizar artículos de bienestar animal,
-* interactuar con la comunidad.
+# 🛠️ Tecnologías Utilizadas
 
-Además existirá un panel administrativo.
+## Frontend
+- React
+- Vite
+- TailwindCSS
+- React Router DOM
+- Axios
+- React Hook Form
+- Zustand / Context API
 
-# FUNCIONALIDADES PRINCIPALES
+## Backend
+- Node.js
+- Express.js
+- JWT Authentication
+- PostgreSQL
+- Supabase
 
-## Autenticación
+## Herramientas
+- Git & GitHub
+- Postman
+- Figma
+- ESLint
+- dotenv
 
-* Registro
-* Login
-* Logout
-* JWT
-* Roles:
+---
 
-  * usuario
-  * administrador
+# 🧩 Funcionalidades Principales
 
-## Landing Page
+## 👤 Autenticación
+- Registro de usuarios
+- Inicio de sesión
+- JWT Authentication
+- Roles (admin / user)
 
-Secciones:
+## 🐶 Mascotas Perdidas
+- Publicación de mascotas perdidas
+- Información de contacto
+- Ubicación
+- Estado de búsqueda
 
-* Hero section
-* Sobre VetChain
-* Beneficios
-* Mascotas perdidas recientes
-* Mascotas en adopción
-* Artículos educativos
-* CTA para unirse
-* Footer moderno
+## 🏠 Adopción Responsable
+- Publicación de mascotas en adopción
+- Información de vacunas
+- Descripción y personalidad
 
-## Dashboard Usuario
+## 🌱 Tenencia Responsable
+Los usuarios podrán compartir acciones positivas relacionadas con:
+- cuidado animal,
+- reciclaje,
+- adopciones,
+- ayuda comunitaria,
+- bienestar ambiental.
 
-* Perfil
-* Mis publicaciones
-* Mascotas perdidas
-* Mascotas en adopción
-* Guardados/Favoritos
-* Eventos disponibles
+Estas publicaciones podrán:
+- recibir likes,
+- generar puntos,
+- participar en sorteos,
+- y formar parte del ranking comunitario.
 
-## Sistema de mascotas perdidas
+## 📚 Blog Educativo
+- artículos,
+- consejos,
+- campañas informativas.
 
-Cada publicación debe tener:
+## 🎉 Eventos y Campañas
+- talleres,
+- campañas de adopción,
+- actividades comunitarias.
 
-* foto
-* nombre
-* ubicación
-* descripción
-* fecha
-* estado
-* contacto
+## 🛡️ Panel Administrativo
+- gestión de usuarios,
+- aprobación de publicaciones,
+- moderación,
+- gestión de eventos,
+- estadísticas.
 
-## Sistema de adopción
+---
 
-Cada mascota debe tener:
+# 🏗️ Arquitectura del Proyecto
 
-* foto
-* edad
-* descripción
-* vacunas
-* personalidad
-* ubicación
-* estado de adopción
+El proyecto utiliza:
+- Clean Architecture
+- principios SOLID
+- arquitectura modular y escalable
 
-## Blog educativo
+---
 
-* artículos
-* categorías
-* imágenes
-* fecha
-* autor
+# 📂 Estructura General
 
-## Eventos/Campañas
+```bash
+vetchain/
+│
+├── frontend/
+│
+├── backend/
+│
+├── docs/
+│
+└── README.md
+```
 
-* talleres
-* campañas de adopción
-* campañas de concientización
+---
 
-## Panel Administrador
+# ⚙️ Instalación del Proyecto
 
-* gestionar usuarios
-* aprobar publicaciones
-* eliminar publicaciones
-* gestionar artículos
-* gestionar eventos
-* estadísticas básicas
+## 1. Clonar repositorio
 
-# ESTRUCTURA DEL PROYECTO
+```bash
+git clone https://github.com/usuario/vetchain.git
+```
 
-Quiero una estructura profesional y limpia de carpetas tanto para frontend como backend.
+---
 
-## FRONTEND
+## 2. Frontend
 
-Necesito:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-* estructura completa de carpetas
-* separación por features/modules
-* components
-* pages
-* services
-* hooks
-* context/store
-* routes
-* layouts
-* assets
-* utils
-* constants
-* reusable UI
+---
 
-## BACKEND
+## 3. Backend
 
-Necesito:
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-* controllers
-* routes
-* services
-* repositories
-* middlewares
-* validators
-* config
-* utils
-* modules
-* database
-* migrations
-* clean architecture
+---
 
-# BASE DE DATOS
+# 🔐 Variables de Entorno
 
-Diseña las tablas principales:
+## Backend `.env`
 
-* users
-* lost_pets
-* adoption_pets
-* articles
-* events
-* favorites
-* comments
-* roles
+```env
+PORT=3000
 
-Incluye:
+DATABASE_URL=
 
-* relaciones
-* llaves foráneas
-* tipos de datos
-* buenas prácticas
+JWT_SECRET=
 
-# QUIERO QUE GENERES
+SUPABASE_URL=
 
-1. Arquitectura completa del proyecto
-2. Estructura de carpetas frontend
-3. Estructura de carpetas backend
-4. Explicación de responsabilidades por carpeta
-5. Flujo general del sistema
-6. Diseño de base de datos SQL
-7. Buenas prácticas
-8. Convenciones de nombres
-9. Configuración inicial recomendada
-10. Librerías recomendadas
-11. Flujo de autenticación JWT
-12. Cómo conectar React con Express y Supabase
-13. Organización escalable y profesional tipo startup/SaaS
+SUPABASE_KEY=
+```
 
-# IMPORTANTE
+---
 
-* Usa Clean Architecture
-* Usa principios SOLID
-* Mantén el código desacoplado
-* Sigue buenas prácticas reales de industria
-* Piensa como un proyecto real que podría crecer
-* El código debe ser mantenible y escalable
-* Usa nombres claros y profesionales
-* Explica decisiones arquitectónicas
-* Prioriza orden y escalabilidad
-* Evita estructuras simples o desorganizadas
+# 📊 Base de Datos
 
-# ESTILO DE RESPUESTA
+Principales tablas:
+- users
+- roles
+- lost_pets
+- adoption_pets
+- responsible_posts
+- comments
+- favorites
+- raffles
+- events
 
-Quiero:
+---
 
-* estructura clara
-* diagramas en texto si es necesario
-* árboles de carpetas
-* ejemplos de código base
-* explicación profesional
-* enfoque moderno 2026
+# 🎯 Impacto Esperado
+
+## Indicadores Digitales
+- visitas a la plataforma,
+- interacciones,
+- usuarios registrados,
+- publicaciones realizadas.
+
+## Indicadores Comunitarios
+- participación en campañas,
+- acciones responsables compartidas,
+- asistentes a talleres,
+- alcance educativo.
+
+---
+
+# 👨‍💻 Equipo de Desarrollo
+
+- Alonso Almerco
+
+---
+
+# 📌 Estado del Proyecto
+
+🚧 En desarrollo
+
+---
+
+# 📄 Licencia
+
+Este proyecto fue desarrollado con fines educativos y sociales.
