@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'https://sistema-pet-chain-lh4h.vercel.app/api/v1';
 const SESSION_KEY = 'vetchain_session';
 
 export function getStoredSession() {
