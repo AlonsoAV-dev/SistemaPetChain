@@ -1,6 +1,6 @@
-# 🐾 VetChain
+# 🐾 PetChain
 
-VetChain es una plataforma web comunitaria enfocada en promover la tenencia responsable y el bienestar animal mediante educación, participación social y herramientas digitales.
+PetChain es una plataforma web comunitaria enfocada en promover la tenencia responsable y el bienestar animal mediante educación, participación social y herramientas digitales.
 
 La plataforma permite a los usuarios:
 - reportar mascotas perdidas,
@@ -14,7 +14,7 @@ La plataforma permite a los usuarios:
 
 # 🚀 Objetivo del Proyecto
 
-El objetivo de VetChain es generar impacto social real mediante tecnología, incentivando el cuidado responsable de mascotas y la participación activa de la comunidad.
+El objetivo de PetChain es generar impacto social real mediante tecnología, incentivando el cuidado responsable de mascotas y la participación activa de la comunidad.
 
 ---
 
@@ -53,6 +53,35 @@ El objetivo de VetChain es generar impacto social real mediante tecnología, inc
 - Figma
 - ESLint
 - dotenv
+
+---
+
+# ✅ Estado actual del desarrollo
+
+Se inició el MVP del sistema interno en la carpeta `frontend/`.
+
+El sistema incluye:
+- pantalla de acceso,
+- panel operativo,
+- módulo de mascotas perdidas,
+- módulo de adopciones,
+- módulo de acciones responsables,
+- módulo administrativo básico,
+- estructura de carpetas por funcionalidades.
+
+## Ejecutar el frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+La aplicación queda disponible en:
+
+```bash
+http://localhost:5173
+```
 
 ---
 
@@ -120,7 +149,7 @@ El proyecto utiliza:
 # 📂 Estructura General
 
 ```bash
-vetchain/
+petchain/
 │
 ├── frontend/
 │
@@ -138,7 +167,7 @@ vetchain/
 ## 1. Clonar repositorio
 
 ```bash
-git clone https://github.com/usuario/vetchain.git
+git clone https://github.com/usuario/petchain.git
 ```
 
 ---
