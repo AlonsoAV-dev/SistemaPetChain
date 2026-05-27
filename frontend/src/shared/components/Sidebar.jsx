@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -11,6 +12,7 @@ import {
   User,
   Users,
 } from 'lucide-react';
+import { clearSession } from '../api/httpClient.js';
 import BrandMark from './BrandMark.jsx';
 
 const navItems = [
@@ -29,6 +31,7 @@ export default function Sidebar({ isCollapsed }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    clearSession();
     navigate('/login');
   };
 
@@ -36,10 +39,10 @@ export default function Sidebar({ isCollapsed }) {
     <aside className="sidebar" id="app-sidebar">
       <BrandMark compact={isCollapsed} />
       <nav className="sidebar-nav" aria-label="Navegacion principal">
-        {navItems.map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} className="nav-link">
-            <Icon size={20} aria-hidden="true" />
-            <span>{label}</span>
+        {navItems.map((item) => (
+          <NavLink key={item.to} to={item.to} end={item.end} className="nav-link">
+            {createElement(item.icon, { size: 20, 'aria-hidden': true })}
+            <span>{item.label}</span>
           </NavLink>
         ))}
       </nav>

@@ -1,16 +1,34 @@
 import { Heart, Plus, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { adoptionsApi } from '../../../shared/api/vetchainApi.js';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
-import { adoptionPets } from '../../../shared/data/mockData.js';
 
 export default function AdoptionsPage() {
+  const [pets, setPets] = useState([]);
   const [query, setQuery] = useState('');
 
+  useEffect(() => {
+    let isMounted = true;
+
+    adoptionsApi
+      .list()
+      .then((data) => {
+        if (isMounted) setPets(data);
+      })
+      .catch((error) => {
+        console.warn('No se pudieron cargar adopciones desde el backend:', error.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredPets = useMemo(() => {
-    return adoptionPets.filter((pet) =>
+    return pets.filter((pet) =>
       `${pet.name} ${pet.type} ${pet.personality}`.toLowerCase().includes(query.toLowerCase()),
     );
-  }, [query]);
+  }, [pets, query]);
 
   return (
     <section className="module-section">
@@ -53,4 +71,3 @@ export default function AdoptionsPage() {
     </section>
   );
 }
-

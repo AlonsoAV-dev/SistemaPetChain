@@ -1,19 +1,41 @@
 import { Heart, Plus, Search, Trophy } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { responsibleActions as initialActions } from '../../../shared/data/mockData.js';
-import { nextId } from '../../../shared/utils/format.js';
+import { useEffect, useMemo, useState } from 'react';
+import { responsibleActionsApi } from '../../../shared/api/vetchainApi.js';
+import { getStoredSession } from '../../../shared/api/httpClient.js';
 
 const emptyForm = {
   title: '',
   category: 'Bienestar animal',
   description: '',
-  author: 'Alonso Almerco',
+  author: '',
 };
 
 export default function ActionsPage() {
-  const [actions, setActions] = useState(initialActions);
+  const defaultAuthor = getStoredSession()?.user?.name ?? '';
+  const [actions, setActions] = useState([]);
   const [query, setQuery] = useState('');
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => ({
+    ...emptyForm,
+    author: defaultAuthor,
+  }));
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    responsibleActionsApi
+      .list()
+      .then((data) => {
+        if (isMounted) setActions(data);
+      })
+      .catch((apiError) => {
+        console.warn('No se pudieron cargar acciones desde el backend:', apiError.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredActions = useMemo(() => {
     return actions.filter((action) =>
@@ -26,26 +48,29 @@ export default function ActionsPage() {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (!form.title.trim()) return;
+    setError('');
 
-    setActions((current) => [
-      {
-        id: nextId(current),
-        ...form,
-        points: 30,
-        likes: 0,
-      },
-      ...current,
-    ]);
-    setForm(emptyForm);
+    try {
+      const createdAction = await responsibleActionsApi.create(form);
+      setActions((current) => [createdAction, ...current]);
+      setForm({ ...emptyForm, author: defaultAuthor });
+    } catch (apiError) {
+      setError(apiError.message);
+    }
   }
 
-  function addLike(id) {
-    setActions((current) =>
-      current.map((action) => (action.id === id ? { ...action, likes: action.likes + 1 } : action)),
-    );
+  async function addLike(id) {
+    try {
+      const updatedAction = await responsibleActionsApi.like(id);
+      setActions((current) =>
+        current.map((action) => (action.id === id ? updatedAction : action)),
+      );
+    } catch (apiError) {
+      setError(apiError.message);
+    }
   }
 
   return (
@@ -86,6 +111,7 @@ export default function ActionsPage() {
               <span>Descripcion</span>
               <textarea className="textarea" name="description" value={form.description} onChange={handleChange} placeholder="Que se hizo y cual fue el impacto" />
             </label>
+            {error && <p className="form-error">{error}</p>}
             <button className="button button-primary" type="submit">
               <Plus size={18} aria-hidden="true" />
               Publicar accion
@@ -127,4 +153,3 @@ export default function ActionsPage() {
     </>
   );
 }
-

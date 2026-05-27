@@ -1,14 +1,39 @@
 import { Check, Clock, ShieldCheck, Trash2, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { adminApi } from '../../../shared/api/vetchainApi.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
-import { moderationItems as initialItems } from '../../../shared/data/mockData.js';
 
 export default function AdminPage() {
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState('');
 
-  function updateStatus(id, status) {
-    setItems((current) => current.map((item) => (item.id === id ? { ...item, status } : item)));
+  useEffect(() => {
+    let isMounted = true;
+
+    adminApi
+      .listModeration()
+      .then((data) => {
+        if (isMounted) setItems(data);
+      })
+      .catch((apiError) => {
+        console.warn('No se pudo cargar moderación desde el backend:', apiError.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function updateStatus(id, status) {
+    setError('');
+
+    try {
+      const updatedItem = await adminApi.updateModeration(id, { status });
+      setItems((current) => current.map((item) => (item.id === id ? updatedItem : item)));
+    } catch (apiError) {
+      setError(apiError.message);
+    }
   }
 
   function removeItem(id) {
@@ -38,6 +63,7 @@ export default function AdminPage() {
             <p>Aprueba, revisa o elimina publicaciones del MVP.</p>
           </div>
         </div>
+        {error && <p className="form-error">{error}</p>}
 
         <div className="admin-list">
           {items.map((item) => (
@@ -65,4 +91,3 @@ export default function AdminPage() {
     </>
   );
 }
-

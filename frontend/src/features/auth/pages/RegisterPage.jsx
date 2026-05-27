@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authApi } from '../../../shared/api/vetchainApi.js';
 import BrandMark from '../../../shared/components/BrandMark.jsx';
 
 const socialProviders = [
@@ -12,10 +13,32 @@ const socialProviders = [
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
-    navigate('/app');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await authApi.register(form);
+      navigate('/app');
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -42,7 +65,14 @@ export default function RegisterPage() {
             <span>Nombre completo</span>
             <div className="login-input">
               <UserRound size={18} aria-hidden="true" />
-              <input type="text" placeholder="Alonso Almerco" autoComplete="name" />
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Alonso Almerco"
+                autoComplete="name"
+              />
             </div>
           </label>
 
@@ -50,7 +80,14 @@ export default function RegisterPage() {
             <span>Correo electrónico</span>
             <div className="login-input">
               <Mail size={18} aria-hidden="true" />
-            <input type="email" placeholder="correo@vetchain.org" autoComplete="email" />
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="correo@vetchain.org"
+                autoComplete="email"
+              />
             </div>
           </label>
 
@@ -60,6 +97,9 @@ export default function RegisterPage() {
               <LockKeyhole size={18} aria-hidden="true" />
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={form.password}
+                onChange={handleChange}
                 placeholder="••••••••"
                 autoComplete="new-password"
               />
@@ -75,8 +115,10 @@ export default function RegisterPage() {
             </div>
           </label>
 
-          <button className="button button-primary login-submit" type="submit">
-            Crear cuenta
+          {error && <p className="form-error">{error}</p>}
+
+          <button className="button button-primary login-submit" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </form>

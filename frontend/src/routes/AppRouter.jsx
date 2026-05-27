@@ -8,6 +8,7 @@ import LostPetsPage from '../features/lostPets/pages/LostPetsPage.jsx';
 import AdoptionsPage from '../features/adoptions/pages/AdoptionsPage.jsx';
 import ActionsPage from '../features/actions/pages/ActionsPage.jsx';
 import AdminPage from '../features/admin/pages/AdminPage.jsx';
+import ProfilePage from '../features/profile/pages/ProfilePage.jsx';
 import ComingSoon from '../shared/components/ComingSoon.jsx';
 
 export default function AppRouter() {
@@ -44,8 +45,7 @@ export default function AppRouter() {
         <Route path="comunidad" element={<ComingSoon title="Comunidad" />} />
         <Route path="eventos" element={<ComingSoon title="Eventos" />}
         />
-        <Route path="perfil" element={<ComingSoon title="Perfil" />}
-        />
+        <Route path="perfil" element={<ProfilePage />} />
         <Route
           path="configuracion"
           element={<ComingSoon title="Configuracion" />}

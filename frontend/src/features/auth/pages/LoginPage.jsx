@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authApi } from '../../../shared/api/vetchainApi.js';
 import BrandMark from '../../../shared/components/BrandMark.jsx';
 
 const socialProviders = [
@@ -12,10 +13,31 @@ const socialProviders = [
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setCredentials((current) => ({ ...current, [name]: value }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
-    navigate('/app');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await authApi.login(credentials);
+      navigate('/app');
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -42,7 +64,14 @@ export default function LoginPage() {
             <span>Correo electrónico</span>
             <div className="login-input">
               <Mail size={18} aria-hidden="true" />
-              <input type="email" placeholder="usuario@gmail.com" autoComplete="email" />
+              <input
+                type="email"
+                name="email"
+                value={credentials.email}
+                onChange={handleChange}
+                placeholder="usuario@gmail.com"
+                autoComplete="email"
+              />
             </div>
           </label>
 
@@ -52,6 +81,9 @@ export default function LoginPage() {
               <LockKeyhole size={18} aria-hidden="true" />
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={credentials.password}
+                onChange={handleChange}
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
@@ -77,8 +109,10 @@ export default function LoginPage() {
             </a>
           </div>
 
-          <button className="button button-primary login-submit" type="submit">
-            Iniciar sesión
+          {error && <p className="form-error">{error}</p>}
+
+          <button className="button button-primary login-submit" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </form>

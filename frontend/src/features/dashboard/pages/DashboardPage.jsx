@@ -1,11 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Bookmark, CalendarDays, Heart, PawPrint, Search } from 'lucide-react';
+import { authApi, dashboardApi } from '../../../shared/api/vetchainApi.js';
+import { getStoredSession } from '../../../shared/api/httpClient.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
-import {
-  adoptionPets,
-  lostPets,
-  recentActivity,
-  recommendedArticles,
-} from '../../../shared/data/mockData.js';
 
 const activityIcons = {
   heart: Heart,
@@ -14,20 +11,69 @@ const activityIcons = {
 };
 
 export default function DashboardPage() {
+  const [dashboard, setDashboard] = useState({
+    user: getStoredSession()?.user ?? null,
+    summary: {
+      savedPosts: 0,
+      activeLostPets: 0,
+      adoptionPets: 0,
+      upcomingEvents: 0,
+    },
+    articles: [],
+    activity: [],
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboard = dashboardApi.getDashboard();
+    const loadProfile = authApi.me();
+
+    Promise.allSettled([loadDashboard, loadProfile]).then((results) => {
+      if (!isMounted) return;
+
+      const [dashboardResult, profileResult] = results;
+
+      if (dashboardResult.status === 'fulfilled') {
+        setDashboard((current) => ({
+          ...current,
+          summary: dashboardResult.value.summary,
+          articles: dashboardResult.value.articles,
+          activity: dashboardResult.value.activity,
+        }));
+      } else {
+        console.warn('No se pudo cargar el dashboard desde el backend:', dashboardResult.reason?.message);
+      }
+
+      if (profileResult.status === 'fulfilled') {
+        setDashboard((current) => ({ ...current, user: profileResult.value }));
+      } else {
+        console.warn('No se pudo cargar el perfil del usuario:', profileResult.reason?.message);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <>
       <section className="page-header dashboard-hero">
         <div className="page-title">
-          <h1>Bienvenida, Alonso <PawPrint size={28} aria-hidden="true" /></h1>
+          <h1>
+            {dashboard.user?.name ? `Bienvenida, ${dashboard.user.name}` : 'Bienvenida'}{' '}
+            <PawPrint size={28} aria-hidden="true" />
+          </h1>
           <p>Gracias por ser parte de la comunidad VetChain.</p>
         </div>
       </section>
 
       <section className="stats-grid">
-        <StatCard icon={Bookmark} label="Publicaciones guardadas" value="12" tone="green" />
-        <StatCard icon={Search} label="Reportes activos de perdidas" value={lostPets.length} tone="purple" />
-        <StatCard icon={Heart} label="Mascotas en adopción" value={adoptionPets.length} tone="red" />
-        <StatCard icon={CalendarDays} label="Eventos próximos" value="5" tone="pink" />
+        <StatCard icon={Bookmark} label="Publicaciones guardadas" value={dashboard.summary.savedPosts} tone="green" />
+        <StatCard icon={Search} label="Reportes activos de perdidas" value={dashboard.summary.activeLostPets} tone="purple" />
+        <StatCard icon={Heart} label="Mascotas en adopción" value={dashboard.summary.adoptionPets} tone="red" />
+        <StatCard icon={CalendarDays} label="Eventos próximos" value={dashboard.summary.upcomingEvents} tone="pink" />
       </section>
 
       <section className="dashboard-grid dashboard-reference-grid">
@@ -40,7 +86,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="article-grid">
-            {recommendedArticles.map((article) => (
+            {dashboard.articles.map((article) => (
               <article className="article-card" key={article.id}>
                 <img src={article.image} alt={article.title} />
                 <div className="article-card-body">
@@ -65,7 +111,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="activity-list reference-activity-list">
-            {recentActivity.map((item) => {
+            {dashboard.activity.map((item) => {
               const Icon = activityIcons[item.icon] ?? Heart;
 
               return (
@@ -86,4 +132,3 @@ export default function DashboardPage() {
     </>
   );
 }
-

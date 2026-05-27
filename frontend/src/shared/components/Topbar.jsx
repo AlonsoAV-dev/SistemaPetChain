@@ -1,6 +1,12 @@
 import { Bell, ChevronDown, Menu } from 'lucide-react';
+import { getStoredSession } from '../api/httpClient.js';
 
-export default function Topbar({ onToggleSidebar, isSidebarCollapsed }) {
+export default function Topbar({ onToggleSidebar, isSidebarCollapsed, user }) {
+  const resolvedUser = user ?? getStoredSession()?.user;
+  const displayName = resolvedUser?.name ?? 'Usuario';
+  const avatarUrl = resolvedUser?.avatarUrl ?? '';
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <header className="topbar">
       <button
@@ -19,8 +25,14 @@ export default function Topbar({ onToggleSidebar, isSidebarCollapsed }) {
           <Bell size={19} aria-hidden="true" />
         </button>
         <div className="user-chip">
-          <span className="avatar">A</span>
-          <strong>Alonso</strong>
+          <span className="avatar" aria-hidden="true">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} loading="lazy" />
+            ) : (
+              initial
+            )}
+          </span>
+          <strong>{displayName}</strong>
           <ChevronDown size={15} aria-hidden="true" />
         </div>
       </div>

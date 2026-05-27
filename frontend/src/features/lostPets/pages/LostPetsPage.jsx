@@ -1,16 +1,34 @@
 import { Plus, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { lostPetsApi } from '../../../shared/api/vetchainApi.js';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
-import { lostPets } from '../../../shared/data/mockData.js';
 
 export default function LostPetsPage() {
+  const [pets, setPets] = useState([]);
   const [query, setQuery] = useState('');
 
+  useEffect(() => {
+    let isMounted = true;
+
+    lostPetsApi
+      .list()
+      .then((data) => {
+        if (isMounted) setPets(data);
+      })
+      .catch((error) => {
+        console.warn('No se pudieron cargar mascotas perdidas desde el backend:', error.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredPets = useMemo(() => {
-    return lostPets.filter((pet) =>
+    return pets.filter((pet) =>
       `${pet.name} ${pet.zone} ${pet.type}`.toLowerCase().includes(query.toLowerCase()),
     );
-  }, [query]);
+  }, [pets, query]);
 
   return (
     <section className="module-section">
@@ -53,4 +71,3 @@ export default function LostPetsPage() {
     </section>
   );
 }
-

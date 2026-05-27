@@ -190,6 +190,19 @@ npm install
 npm run dev
 ```
 
+API local:
+
+```bash
+http://localhost:3000
+```
+
+Credenciales demo:
+
+```txt
+valeria@vetchain.org
+vetchain123
+```
+
 ---
 
 # 🔐 Variables de Entorno
