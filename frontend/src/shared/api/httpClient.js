@@ -1,4 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'https://sistema-pet-chain-lh4h.vercel.app/api/v1';
+function resolveApiBaseUrl() {
+  const explicitApiUrl = import.meta.env.VITE_API_URL?.trim();
+  if (explicitApiUrl) {
+    return explicitApiUrl.replace(/\/+$/, '');
+  }
+
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3000/api/v1';
+  }
+
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/api/v1`;
+  }
+
+  return '/api/v1';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 const SESSION_KEY = 'vetchain_session';
 
 export function getStoredSession() {
@@ -38,10 +55,16 @@ export async function apiRequest(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el backend. Verifica VITE_API_URL y CORS en producción.');
+  }
 
   const payload = await response.json().catch(() => null);
 
@@ -51,4 +74,3 @@ export async function apiRequest(path, options = {}) {
 
   return payload?.data ?? payload;
 }
-

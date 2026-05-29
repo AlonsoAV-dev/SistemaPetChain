@@ -117,3 +117,8 @@ export const adminApi = {
   },
 };
 
+export const eventsApi = {
+  async list() {
+    return apiRequest('/events');
+  },
+};

@@ -5,7 +5,7 @@ export const seed = {
     {
       id: 'usr_Alonso',
       name: 'Alonso',
-      email: 'alonso@vetchain.org',
+      email: 'alonso@vetchain.com',
       passwordHash: hashPassword('vetchain123'),
       role: 'admin',
       avatarUrl: 'https://i.pinimg.com/474x/65/1a/a9/651aa9c3abdac15de38c50072f264499.jpg',
@@ -14,7 +14,7 @@ export const seed = {
     {
       id: 'usr_Ana',
       name: 'Ana Ruiz',
-      email: 'ana@vetchain.org',
+      email: 'ana@vetchain.com',
       passwordHash: hashPassword('vetchain123'),
       role: 'user',
       avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
@@ -23,7 +23,7 @@ export const seed = {
     {
       id: 'usr_Lucia',
       name: 'Lucia Campos',
-      email: 'lucia@vetchain.org',
+      email: 'lucia@vetchain.com',
       passwordHash: hashPassword('vetchain123'),
       role: 'moderator',
       avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',

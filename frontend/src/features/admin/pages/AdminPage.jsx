@@ -1,24 +1,41 @@
 import { Check, Clock, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { adminApi } from '../../../shared/api/vetchainApi.js';
+import { adminApi, authApi, responsibleActionsApi } from '../../../shared/api/vetchainApi.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
 
 export default function AdminPage() {
+  const [user, setUser] = useState(null);
   const [items, setItems] = useState([]);
+  const [actionsCount, setActionsCount] = useState(0);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
 
-    adminApi
-      .listModeration()
-      .then((data) => {
-        if (isMounted) setItems(data);
-      })
-      .catch((apiError) => {
-        console.warn('No se pudo cargar moderación desde el backend:', apiError.message);
-      });
+    Promise.allSettled([
+      adminApi.listModeration(),
+      authApi.me(),
+      responsibleActionsApi.list(),
+    ]).then((results) => {
+      if (!isMounted) return;
+
+      const [moderationResult, userResult, actionsResult] = results;
+
+      if (moderationResult.status === 'fulfilled') {
+        setItems(moderationResult.value);
+      } else {
+        console.warn('No se pudo cargar moderación desde el backend:', moderationResult.reason?.message);
+      }
+
+      if (userResult.status === 'fulfilled') {
+        setUser(userResult.value);
+      }
+
+      if (actionsResult.status === 'fulfilled') {
+        setActionsCount(actionsResult.value.length);
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -44,7 +61,7 @@ export default function AdminPage() {
     <>
       <section className="page-header">
         <div className="page-title">
-          <h1>Administracion</h1>
+          <h1>{user?.name ? `Administracion, ${user.name}` : 'Administracion'}</h1>
           <p>Moderacion basica de publicaciones, usuarios y contenido comunitario.</p>
         </div>
       </section>
@@ -52,8 +69,8 @@ export default function AdminPage() {
       <section className="stats-grid">
         <StatCard icon={Clock} label="Pendientes" value={items.filter((item) => item.status === 'Pendiente').length} detail="Requieren revision" />
         <StatCard icon={ShieldCheck} label="Aprobadas" value={items.filter((item) => item.status === 'Aprobado').length} detail="Listas para publicarse" />
-        <StatCard icon={Users} label="Usuarios" value="85" detail="Comunidad registrada" />
-        <StatCard icon={Check} label="Acciones" value="34" detail="Buenas acciones reportadas" />
+        <StatCard icon={Users} label="Usuarios" value={user ? '1' : '—'} detail="Sesion administrativa activa" />
+        <StatCard icon={Check} label="Acciones" value={actionsCount} detail="Buenas acciones reportadas" />
       </section>
 
       <section className="panel">

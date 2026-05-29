@@ -8,12 +8,27 @@ export function createApp() {
   const app = express();
 
   app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', env.corsOrigin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    const requestOrigin = req.headers.origin;
+    const configuredOrigins = env.corsOrigins;
+    const allowAnyOrigin = configuredOrigins.length === 0;
+    const isAllowedOrigin =
+      allowAnyOrigin || (requestOrigin ? configuredOrigins.includes(requestOrigin) : false);
+
+    if (isAllowedOrigin) {
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin ?? '*');
+      if (requestOrigin) {
+        res.setHeader('Vary', 'Origin');
+      }
+    }
+
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
 
     if (req.method === 'OPTIONS') {
+      if (!isAllowedOrigin) {
+        res.sendStatus(403);
+        return;
+      }
       res.sendStatus(204);
       return;
     }

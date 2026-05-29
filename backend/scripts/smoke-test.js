@@ -3,11 +3,11 @@ import { createLostPet, getLostPets } from '../src/modules/lostPets/lostPets.ser
 import { login } from '../src/modules/auth/auth.service.js';
 
 const session = login({
-  email: 'valeria@vetchain.org',
+  email: 'alonso@vetchain.com',
   password: 'vetchain123',
 });
 
-if (!session.token || session.user.email !== 'valeria@vetchain.org') {
+if (!session.token || session.user.email !== 'alonso@vetchain.com') {
   throw new Error('Auth smoke test failed');
 }
 
@@ -33,4 +33,3 @@ if (!getLostPets({ query: 'Demo' }).some((pet) => pet.id === createdPet.id)) {
 }
 
 console.log('Backend smoke test passed');
-

@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { authApi } from '../../../shared/api/vetchainApi.js';
+import {
+  adoptionsApi,
+  eventsApi,
+  authApi,
+  lostPetsApi,
+  responsibleActionsApi,
+} from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(() => getStoredSession()?.user ?? null);
+  const [summary, setSummary] = useState({
+    actions: 0,
+    lostPets: 0,
+    adoptions: 0,
+    events: 0,
+  });
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [avatarInput, setAvatarInput] = useState(() => getStoredSession()?.user?.avatarUrl ?? '');
@@ -23,14 +35,36 @@ export default function ProfilePage() {
     let isMounted = true;
     setError('');
 
-    authApi
-      .me()
-      .then((data) => {
-        if (isMounted) setProfile(data);
-      })
-      .catch((apiError) => {
-        if (isMounted) setError(apiError.message);
+    Promise.allSettled([
+      authApi.me(),
+      responsibleActionsApi.list(),
+      lostPetsApi.list(),
+      adoptionsApi.list(),
+      eventsApi.list(),
+    ]).then((results) => {
+      if (!isMounted) return;
+
+      const [
+        profileResult,
+        actionsResult,
+        lostPetsResult,
+        adoptionsResult,
+        eventsResult,
+      ] = results;
+
+      if (profileResult.status === 'fulfilled') {
+        setProfile(profileResult.value);
+      } else {
+        setError(profileResult.reason?.message ?? 'No se pudo cargar el perfil.');
+      }
+
+      setSummary({
+        actions: actionsResult.status === 'fulfilled' ? actionsResult.value.length : 0,
+        lostPets: lostPetsResult.status === 'fulfilled' ? lostPetsResult.value.length : 0,
+        adoptions: adoptionsResult.status === 'fulfilled' ? adoptionsResult.value.length : 0,
+        events: eventsResult.status === 'fulfilled' ? eventsResult.value.length : 0,
       });
+    });
 
     return () => {
       isMounted = false;
@@ -73,7 +107,7 @@ export default function ProfilePage() {
     <>
       <section className="page-header">
         <div className="page-title">
-          <h1>Perfil</h1>
+          <h1>{profile?.name ? `Perfil de ${profile.name}` : 'Perfil'}</h1>
           <p>Consulta tu informacion personal y estado dentro de VetChain.</p>
         </div>
       </section>
@@ -152,10 +186,10 @@ export default function ProfilePage() {
           <p>Seguimiento rapido de tu participacion.</p>
         </div>
         <div className="stats-grid" style={{ marginTop: 24 }}>
-          <StatCard label="Acciones registradas" value="—" />
-          <StatCard label="Reportes activos" value="—" />
-          <StatCard label="Adopciones" value="—" />
-          <StatCard label="Eventos" value="—" />
+          <StatCard label="Acciones registradas" value={summary.actions} />
+          <StatCard label="Reportes activos" value={summary.lostPets} />
+          <StatCard label="Adopciones" value={summary.adoptions} />
+          <StatCard label="Eventos" value={summary.events} />
         </div>
       </section>
     </>

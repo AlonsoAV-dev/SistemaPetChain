@@ -28,7 +28,7 @@ http://localhost:3000
 ## Credenciales demo
 
 ```txt
-email: valeria@vetchain.org
+email: alonso@vetchain.com
 password: vetchain123
 ```
 
@@ -69,6 +69,23 @@ Las rutas `POST`, `PATCH`, `/auth/me`, eventos privados y administracion requier
 ```txt
 Authorization: Bearer <token>
 ```
+
+## Deploy en Vercel
+
+Esta carpeta ya incluye configuracion para Vercel:
+
+- `vercel.json`
+- `api/index.js` (entrypoint serverless de Express)
+
+Variables requeridas en el proyecto de backend en Vercel:
+
+```txt
+AUTH_SECRET=<valor-seguro>
+CORS_ORIGINS=https://tu-frontend.vercel.app,https://otro-dominio.com
+AUTH_TOKEN_TTL_SECONDS=86400
+```
+
+Si `CORS_ORIGINS` queda vacio, el backend permite cualquier origen. Para produccion conviene definir tu lista explicita.
 
 ## Siguiente paso
 

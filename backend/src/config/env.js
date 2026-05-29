@@ -26,7 +26,10 @@ if (existsSync(envFile)) {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  corsOrigins: (process.env.CORS_ORIGINS ?? process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   authSecret: process.env.AUTH_SECRET ?? 'dev-secret',
   authTokenTtlSeconds: Number(process.env.AUTH_TOKEN_TTL_SECONDS ?? 86400),
 };

@@ -199,7 +199,7 @@ http://localhost:3000
 Credenciales demo:
 
 ```txt
-valeria@vetchain.org
+alonso@vetchain.com
 vetchain123
 ```
 
