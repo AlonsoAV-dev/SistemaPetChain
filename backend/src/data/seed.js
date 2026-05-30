@@ -396,7 +396,7 @@ export const seed = {
       category: 'Educacion',
       title: 'Guia basica de tenencia responsable',
       description: 'Pequenas acciones que hacen una gran diferencia.',
-      imageUrl: 'https://images.unsplash.com/photo-1558944351-caf68549d275?auto=format&fit=crop&w=900&q=80',
+      imageUrl: 'https://scontent.flim26-1.fna.fbcdn.net/v/t39.30808-6/600136413_1180157514300612_6570053853912843038_n.jpg?stp=dst-jpg_s1080x2048_tt6&_nc_cat=107&ccb=1-7&_nc_sid=127cfc&_nc_ohc=UZ3QrzXUgzYQ7kNvwH_VvKV&_nc_oc=AdqrNzJoGJKpnfizpIwT-mQfSI_ikEjLdF16cSNN1cmDLqbDdfEx5UodemDdzXjhBl8&_nc_zt=23&_nc_ht=scontent.flim26-1.fna&_nc_gid=vkK4vOFLz3VFwx7utJPfUg&_nc_ss=7e289&oh=00_Af5YvQEHRt5BLb1DNNrtVorabuMfY5Kzo9RNgwHwyAiHFQ&oe=6A1FE66E',
       createdAt: '2026-05-14T10:00:00.000Z',
     },
     {
