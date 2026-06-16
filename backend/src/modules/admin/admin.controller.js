@@ -1,12 +1,50 @@
 import * as adminService from './admin.service.js';
 
-export function listModerationItems(_req, res) {
-  res.json({ data: adminService.getModerationItems() });
+export async function listModerationItems(_req, res) {
+  res.json({ data: await adminService.getModerationItems() });
 }
 
-export function updateModerationItem(req, res) {
-  const data = adminService.updateModerationItem(req.params.id, req.body);
+export async function updateModerationItem(req, res) {
+  const data = await adminService.updateModerationItem(
+    req.params.id,
+    req.body,
+    req.user.id,
+  );
 
   res.json({ data });
+}
+
+export async function listPublications(req, res) {
+  res.json({ data: await adminService.listPublications(req.query) });
+}
+
+export async function listComments(req, res) {
+  res.json({ data: await adminService.listComments(req.query) });
+}
+
+export async function deleteComment(req, res) {
+  await adminService.deleteComment(req.params.id);
+  res.status(204).end();
+}
+
+export async function listUsers(req, res) {
+  res.json({ data: await adminService.listUsers(req.query) });
+}
+
+export async function createUser(req, res) {
+  res.status(201).json({ data: await adminService.createUser(req.body) });
+}
+
+export async function updateUserStatus(req, res) {
+  const data = await adminService.updateUserStatus(
+    req.params.id,
+    req.body?.status,
+    req.user.id,
+  );
+  res.json({ data });
+}
+
+export async function getSummary(_req, res) {
+  res.json({ data: await adminService.getSummary() });
 }
 

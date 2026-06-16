@@ -12,7 +12,11 @@ export function hashPassword(password) {
 }
 
 export function verifyPassword(password, storedHash) {
+  if (typeof storedHash !== 'string') return false;
+
   const [iterations, salt, originalHash] = storedHash.split(':');
+  if (!iterations || !salt || !originalHash) return false;
+
   const hash = pbkdf2Sync(password, salt, Number(iterations), KEY_LENGTH, DIGEST).toString('hex');
   const originalBuffer = Buffer.from(originalHash, 'hex');
   const hashBuffer = Buffer.from(hash, 'hex');

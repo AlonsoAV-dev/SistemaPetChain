@@ -1,14 +1,14 @@
 import * as dashboardService from './dashboard.service.js';
 
-export function getDashboard(_req, res) {
-  res.json({ data: dashboardService.getDashboard() });
+export async function getDashboard(req, res) {
+  res.json({ data: await dashboardService.getDashboard(req.user.id) });
 }
 
-export function getSummary(_req, res) {
-  res.json({ data: dashboardService.getSummary() });
+export async function getSummary(req, res) {
+  res.json({ data: await dashboardService.getSummary(req.user.id) });
 }
 
-export function getActivity(_req, res) {
-  res.json({ data: dashboardService.getActivity() });
+export async function getActivity(req, res) {
+  res.json({ data: await dashboardService.getActivity(req.user.id) });
 }
 

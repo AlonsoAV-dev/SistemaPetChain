@@ -1,50 +1,30 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
+import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { httpError } from './httpError.js';
 
-function encode(payload) {
-  return Buffer.from(JSON.stringify(payload)).toString('base64url');
-}
-
-function sign(value) {
-  return createHmac('sha256', env.authSecret).update(value).digest('base64url');
-}
-
 export function signToken(payload) {
-  const header = encode({ alg: 'HS256', typ: 'JWT' });
-  const body = encode({
-    ...payload,
-    exp: Math.floor(Date.now() / 1000) + env.authTokenTtlSeconds,
+  return jwt.sign(payload, env.authSecret, {
+    algorithm: 'HS256',
+    expiresIn: env.authTokenTtlSeconds,
+    issuer: env.authIssuer,
+    audience: env.authAudience,
+    jwtid: randomUUID(),
   });
-  const signature = sign(`${header}.${body}`);
-
-  return `${header}.${body}.${signature}`;
 }
 
 export function verifyToken(token) {
-  const [header, body, signature] = token?.split('.') ?? [];
-
-  if (!header || !body || !signature) {
+  try {
+    return jwt.verify(token, env.authSecret, {
+      algorithms: ['HS256'],
+      issuer: env.authIssuer,
+      audience: env.authAudience,
+    });
+  } catch (error) {
+    if (error?.name === 'TokenExpiredError') {
+      throw httpError(401, 'Token expirado.');
+    }
     throw httpError(401, 'Token invalido.');
   }
-
-  const expectedSignature = sign(`${header}.${body}`);
-  const signatureBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expectedSignature);
-
-  if (
-    signatureBuffer.length !== expectedBuffer.length ||
-    !timingSafeEqual(signatureBuffer, expectedBuffer)
-  ) {
-    throw httpError(401, 'Token invalido.');
-  }
-
-  const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
-
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-    throw httpError(401, 'Token expirado.');
-  }
-
-  return payload;
 }
 

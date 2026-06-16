@@ -1,15 +1,18 @@
-# Backend VetChain
+# Backend PetChain
 
-API REST para el MVP de VetChain. La primera version usa datos en memoria para avanzar rapido con el frontend y deja la estructura lista para conectar PostgreSQL, Supabase o Prisma despues.
+API REST para el MVP de PetChain. Express gestiona autenticacion, autorizacion y
+reglas de negocio; Supabase se utiliza como PostgreSQL y Storage.
 
 ## Stack
 
 - Node.js
 - Express
-- CORS propio
-- Carga simple de `.env` sin dependencias externas
-- Autenticacion con token firmado HMAC
-- Datos semilla en memoria
+- PostgreSQL mediante `pg`
+- Supabase Storage
+- JWT HS256 con emisor, audiencia y expiracion
+- PBKDF2 para contrasenas
+- Helmet y rate limiting
+- Moderacion y puntos gestionados en PostgreSQL
 
 ## Ejecutar
 
@@ -25,12 +28,26 @@ La API queda disponible en:
 http://localhost:3000
 ```
 
-## Credenciales demo
+## Base de datos PostgreSQL
+
+La migracion inicial esta en:
 
 ```txt
-email: alonso@vetchain.com
-password: vetchain123
+database/001_initial_schema.sql
 ```
+
+Incluye usuarios, publicaciones, moderacion administrativa, propiedad de
+contenido, puntos, articulos, eventos y el bucket de Storage. Las instrucciones
+estan en `database/README.md` y `../docs/SUPABASE.md`.
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/001_initial_schema.sql
+```
+
+## Credenciales demo
+
+Ya no se cargan credenciales demo. Registra una cuenta y promocionala a
+administrador siguiendo `../docs/SUPABASE.md`.
 
 ## Endpoints principales
 
@@ -80,18 +97,18 @@ Esta carpeta ya incluye configuracion para Vercel:
 Variables requeridas en el proyecto de backend en Vercel:
 
 ```txt
+DATABASE_URL=<transaction-pooler-uri>
+DATABASE_SSL=true
+DATABASE_POOL_MAX=5
 AUTH_SECRET=<valor-seguro>
 CORS_ORIGINS=https://tu-frontend.vercel.app,https://otro-dominio.com
 AUTH_TOKEN_TTL_SECONDS=86400
+SUPABASE_URL=https://PROJECT_REF.supabase.co
+SUPABASE_SECRET_KEY=<clave-secreta>
+SUPABASE_STORAGE_BUCKET=petchain-media
 ```
 
 Si `CORS_ORIGINS` queda vacio, el backend permite cualquier origen. Para produccion conviene definir tu lista explicita.
 
-## Siguiente paso
-
-Reemplazar `src/data/store.js` por una capa de persistencia real:
-
-- Supabase Auth para usuarios,
-- PostgreSQL para tablas,
-- politicas por rol,
-- subida de imagenes a Supabase Storage.
+No coloques `SUPABASE_SECRET_KEY` en el frontend. `VITE_API_URL` siempre debe
+apuntar al backend Express.

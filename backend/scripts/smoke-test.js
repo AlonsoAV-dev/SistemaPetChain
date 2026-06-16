@@ -1,35 +1,20 @@
-import { getDashboard } from '../src/modules/dashboard/dashboard.service.js';
-import { createLostPet, getLostPets } from '../src/modules/lostPets/lostPets.service.js';
-import { login } from '../src/modules/auth/auth.service.js';
+import { checkDatabaseConnection, pool, query } from '../src/config/database.js';
 
-const session = login({
-  email: 'alonso@vetchain.com',
-  password: 'vetchain123',
-});
+try {
+  await checkDatabaseConnection();
 
-if (!session.token || session.user.email !== 'alonso@vetchain.com') {
-  throw new Error('Auth smoke test failed');
+  const result = await query(
+    `SELECT to_regclass('public.users') AS users,
+            to_regclass('public.publications') AS publications,
+            to_regclass('storage.buckets') AS storage_buckets`,
+  );
+  const schema = result.rows[0];
+
+  if (!schema.users || !schema.publications || !schema.storage_buckets) {
+    throw new Error('La migracion de Supabase no esta completa.');
+  }
+
+  console.log('Backend database smoke test passed');
+} finally {
+  await pool.end();
 }
-
-const dashboard = getDashboard();
-
-if (!dashboard.summary || !Array.isArray(dashboard.articles)) {
-  throw new Error('Dashboard smoke test failed');
-}
-
-const createdPet = createLostPet(
-  {
-    name: 'Demo',
-    type: 'Perro',
-    zone: 'Lima',
-    lastSeen: 'Hoy',
-    description: 'Caso de prueba',
-  },
-  session.user,
-);
-
-if (!getLostPets({ query: 'Demo' }).some((pet) => pet.id === createdPet.id)) {
-  throw new Error('Lost pets smoke test failed');
-}
-
-console.log('Backend smoke test passed');

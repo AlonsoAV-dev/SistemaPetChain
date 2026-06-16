@@ -1,9 +1,11 @@
 import { Router } from 'express';
+import { requireAuth } from '../../middlewares/authMiddleware.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import * as dashboardController from './dashboard.controller.js';
 
 const router = Router();
 
+router.use(requireAuth);
 router.get('/', asyncHandler(dashboardController.getDashboard));
 router.get('/summary', asyncHandler(dashboardController.getSummary));
 router.get('/activity', asyncHandler(dashboardController.getActivity));

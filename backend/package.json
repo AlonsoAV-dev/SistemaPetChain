@@ -1,5 +1,5 @@
 {
-  "name": "vetchain-backend",
+  "name": "petchain-backend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,9 +7,16 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "check": "node --check src/server.js",
-    "smoke": "node scripts/smoke-test.js"
+    "smoke": "node scripts/smoke-test.js",
+    "integration": "node scripts/integration-test.js"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "@supabase/supabase-js": "^2.108.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "pg": "^8.21.0"
   }
 }
