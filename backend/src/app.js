@@ -7,6 +7,30 @@ import apiRoutes from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
 
+function originMatches(requestOrigin, allowedOrigin) {
+  if (allowedOrigin === '*') return true;
+  if (requestOrigin === allowedOrigin) return true;
+
+  try {
+    const requestUrl = new URL(requestOrigin);
+    const allowedUrl = new URL(allowedOrigin);
+
+    if (!allowedUrl.hostname.startsWith('*.')) return false;
+    if (requestUrl.protocol !== allowedUrl.protocol) return false;
+
+    const suffix = allowedUrl.hostname.slice(1);
+    return requestUrl.hostname.endsWith(suffix) && requestUrl.hostname !== suffix.slice(1);
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedCorsOrigin(requestOrigin, configuredOrigins) {
+  if (!requestOrigin) return configuredOrigins.length === 0;
+  if (configuredOrigins.length === 0) return true;
+  return configuredOrigins.some((origin) => originMatches(requestOrigin, origin));
+}
+
 export function createApp() {
   const app = express();
 
@@ -16,9 +40,7 @@ export function createApp() {
   app.use((req, res, next) => {
     const requestOrigin = req.headers.origin;
     const configuredOrigins = env.corsOrigins;
-    const allowAnyOrigin = configuredOrigins.length === 0;
-    const isAllowedOrigin =
-      allowAnyOrigin || (requestOrigin ? configuredOrigins.includes(requestOrigin) : false);
+    const isAllowedOrigin = isAllowedCorsOrigin(requestOrigin, configuredOrigins);
 
     if (isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', requestOrigin ?? '*');

@@ -101,14 +101,20 @@ DATABASE_URL=<transaction-pooler-uri>
 DATABASE_SSL=true
 DATABASE_POOL_MAX=5
 AUTH_SECRET=<valor-seguro>
-CORS_ORIGINS=https://tu-frontend.vercel.app,https://otro-dominio.com
+CORS_ORIGINS=https://tu-frontend.vercel.app,https://*.vercel.app
 AUTH_TOKEN_TTL_SECONDS=86400
 SUPABASE_URL=https://PROJECT_REF.supabase.co
 SUPABASE_SECRET_KEY=<clave-secreta>
 SUPABASE_STORAGE_BUCKET=petchain-media
 ```
 
-Si `CORS_ORIGINS` queda vacio, el backend permite cualquier origen. Para produccion conviene definir tu lista explicita.
+Si `CORS_ORIGINS` queda vacio, el backend permite cualquier origen. Para
+produccion conviene definir tu dominio final. Para previews de Vercel puedes
+usar `https://*.vercel.app`, porque cada deployment genera una URL distinta.
+
+Importante: desactiva Vercel Authentication/Deployment Protection en el
+proyecto del backend. Si Vercel protege el deployment, los preflight `OPTIONS`
+responden `401` antes de llegar a Express.
 
 No coloques `SUPABASE_SECRET_KEY` en el frontend. `VITE_API_URL` siempre debe
 apuntar al backend Express.

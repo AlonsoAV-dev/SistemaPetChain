@@ -34,18 +34,17 @@ El objetivo de PetChain es generar impacto social real mediante tecnología, inc
 ## Frontend
 - React
 - Vite
-- TailwindCSS
 - React Router DOM
-- Axios
-- React Hook Form
-- Zustand / Context API
+- Fetch API
+- CSS modular por componentes y tokens
 
 ## Backend
 - Node.js
 - Express.js
 - JWT Authentication
 - PostgreSQL
-- Supabase
+- Supabase Database y Storage
+- `pg` y `@supabase/supabase-js`
 
 ## Herramientas
 - Git & GitHub
@@ -139,10 +138,12 @@ Estas publicaciones podrán:
 
 # 🏗️ Arquitectura del Proyecto
 
-El proyecto utiliza:
-- Clean Architecture
-- principios SOLID
-- arquitectura modular y escalable
+El proyecto conserva una arquitectura modular sencilla:
+
+- rutas,
+- controladores,
+- servicios,
+- configuración y utilidades compartidas.
 
 ---
 
@@ -196,12 +197,8 @@ API local:
 http://localhost:3000
 ```
 
-Credenciales demo:
-
-```txt
-alonso@vetchain.com
-vetchain123
-```
+Registra una cuenta desde la aplicación. Para convertirla en administradora,
+sigue [`docs/SUPABASE.md`](docs/SUPABASE.md).
 
 ---
 
@@ -212,14 +209,19 @@ vetchain123
 ```env
 PORT=3000
 
-DATABASE_URL=
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@REGION.pooler.supabase.com:6543/postgres
 
-JWT_SECRET=
+AUTH_SECRET=un-secreto-aleatorio-de-al-menos-32-caracteres
 
-SUPABASE_URL=
+SUPABASE_URL=https://PROJECT_REF.supabase.co
 
-SUPABASE_KEY=
+SUPABASE_SECRET_KEY=sb_secret_...
+
+SUPABASE_STORAGE_BUCKET=petchain-media
 ```
+
+La guia completa para crear y conectar el proyecto esta en
+[`docs/SUPABASE.md`](docs/SUPABASE.md).
 
 ---
 
