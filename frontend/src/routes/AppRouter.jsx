@@ -1,56 +1,50 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import AuthLayout from '../layouts/AuthLayout.jsx';
-import DashboardLayout from '../layouts/DashboardLayout.jsx';
+import ActionsPage from '../features/actions/pages/ActionsPage.jsx';
+import ActionDetailPage from '../features/actions/pages/ActionDetailPage.jsx';
+import AdminPage from '../features/admin/pages/AdminPage.jsx';
+import AdoptionsPage from '../features/adoptions/pages/AdoptionsPage.jsx';
+import AdoptionDetailPage from '../features/adoptions/pages/AdoptionDetailPage.jsx';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import RegisterPage from '../features/auth/pages/RegisterPage.jsx';
+import CommunityPage from '../features/community/pages/CommunityPage.jsx';
+import ArticleDetailPage from '../features/content/pages/ArticleDetailPage.jsx';
+import ArticlesPage from '../features/content/pages/ArticlesPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
+import EventsPage from '../features/events/pages/EventsPage.jsx';
+import EventDetailPage from '../features/events/pages/EventDetailPage.jsx';
 import LostPetsPage from '../features/lostPets/pages/LostPetsPage.jsx';
-import AdoptionsPage from '../features/adoptions/pages/AdoptionsPage.jsx';
-import ActionsPage from '../features/actions/pages/ActionsPage.jsx';
-import AdminPage from '../features/admin/pages/AdminPage.jsx';
+import LostPetDetailPage from '../features/lostPets/pages/LostPetDetailPage.jsx';
 import ProfilePage from '../features/profile/pages/ProfilePage.jsx';
-import ComingSoon from '../shared/components/ComingSoon.jsx';
+import SettingsPage from '../features/settings/pages/SettingsPage.jsx';
+import AuthLayout from '../layouts/AuthLayout.jsx';
+import DashboardLayout from '../layouts/DashboardLayout.jsx';
+import ProtectedRoute from '../shared/components/ProtectedRoute.jsx';
 
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route
-        path="/login"
-        element={
-          <AuthLayout>
-            <LoginPage />
-          </AuthLayout>
-        }
-      />
-      <Route
-        path="/registro"
-        element={
-          <AuthLayout>
-            <RegisterPage />
-          </AuthLayout>
-        }
-      />
+      <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
+      <Route path="/registro" element={<AuthLayout><RegisterPage /></AuthLayout>} />
       <Route path="/register" element={<Navigate to="/registro" replace />} />
-      <Route path="/app" element={<DashboardLayout />}>
+      <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
-        <Route path="educacion" element={<ActionsPage />} />
-        <Route
-          path="salud"
-          element={<ComingSoon title="Salud y prevencion" />}
-        />
+        <Route path="articulos" element={<ArticlesPage />} />
+        <Route path="articulos/:id" element={<ArticleDetailPage />} />
+        <Route path="educacion" element={<Navigate to="/app/articulos" replace />} />
+        <Route path="salud" element={<ArticlesPage initialCategory="Salud" />} />
         <Route path="mascotas-perdidas" element={<LostPetsPage />} />
+        <Route path="mascotas-perdidas/:id" element={<LostPetDetailPage />} />
         <Route path="adopciones" element={<AdoptionsPage />} />
+        <Route path="adopciones/:id" element={<AdoptionDetailPage />} />
         <Route path="acciones" element={<ActionsPage />} />
-        <Route path="comunidad" element={<ComingSoon title="Comunidad" />} />
-        <Route path="eventos" element={<ComingSoon title="Eventos" />}
-        />
+        <Route path="acciones/:id" element={<ActionDetailPage />} />
+        <Route path="comunidad" element={<CommunityPage />} />
+        <Route path="eventos" element={<EventsPage />} />
+        <Route path="eventos/:id" element={<EventDetailPage />} />
         <Route path="perfil" element={<ProfilePage />} />
-        <Route
-          path="configuracion"
-          element={<ComingSoon title="Configuracion" />}
-        />
-        <Route path="admin" element={<AdminPage />} />
+        <Route path="configuracion" element={<SettingsPage />} />
+        <Route path="admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/app" replace />} />
     </Routes>

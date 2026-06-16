@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { authApi } from '../shared/api/vetchainApi.js';
 import { getStoredSession } from '../shared/api/httpClient.js';
 import Sidebar from '../shared/components/Sidebar.jsx';
 import Topbar from '../shared/components/Topbar.jsx';
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [user, setUser] = useState(() => getStoredSession()?.user ?? null);
 
@@ -19,12 +20,15 @@ export default function DashboardLayout() {
       })
       .catch((error) => {
         console.warn('No se pudo cargar el perfil del usuario:', error.message);
+        if (/token|autenticacion|usuario no disponible/i.test(error.message)) {
+          navigate('/login', { replace: true });
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [navigate]);
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed((prev) => !prev);

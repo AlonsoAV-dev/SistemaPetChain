@@ -4,6 +4,7 @@ import {
   eventsApi,
   authApi,
   lostPetsApi,
+  mediaApi,
   responsibleActionsApi,
 } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [avatarInput, setAvatarInput] = useState(() => getStoredSession()?.user?.avatarUrl ?? '');
+  const [avatarFile, setAvatarFile] = useState(null);
   const displayName = profile?.name ?? 'Usuario';
   const avatarUrl = profile?.avatarUrl ?? '';
   const initial = displayName.charAt(0).toUpperCase();
@@ -77,15 +79,7 @@ export default function ProfilePage() {
 
   function handleAvatarFileChange(event) {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAvatarInput(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    setAvatarFile(file ?? null);
   }
 
   async function handleAvatarSubmit(event) {
@@ -94,8 +88,13 @@ export default function ProfilePage() {
     setIsSaving(true);
 
     try {
-      const updatedProfile = await authApi.updateProfile({ avatarUrl: avatarInput });
+      const avatarUrl = avatarFile
+        ? (await mediaApi.uploadImage(avatarFile, 'avatars')).url
+        : avatarInput;
+      const updatedProfile = await authApi.updateProfile({ avatarUrl });
       setProfile(updatedProfile);
+      setAvatarInput(updatedProfile.avatarUrl ?? '');
+      setAvatarFile(null);
     } catch (apiError) {
       setError(apiError.message);
     } finally {
