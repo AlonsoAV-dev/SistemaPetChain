@@ -123,24 +123,6 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>o usa redes sociales para registrarte</span>
-        </div>
-
-        <div className="social-row" aria-label="Opciones de registro social">
-          {socialProviders.map((provider) => (
-            <button
-              className="social-button"
-              type="button"
-              key={provider.label}
-              aria-label={`Registrarse con ${provider.label}`}
-              title={`Registrarse con ${provider.label}`}
-            >
-              {provider.shortLabel}
-            </button>
-          ))}
-        </div>
-
         <p className="signup-copy">
           Ya tienes una cuenta? <Link to="/login">Inicia sesion</Link>
         </p>

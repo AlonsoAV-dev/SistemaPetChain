@@ -117,23 +117,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>o usa redes sociales para iniciar sesion</span>
-        </div>
-
-        <div className="social-row" aria-label="Opciones de acceso social">
-          {socialProviders.map((provider) => (
-            <button
-              className="social-button"
-              type="button"
-              key={provider.label}
-              aria-label={`Continuar con ${provider.label}`}
-              title={`Continuar con ${provider.label}`}
-            >
-              {provider.shortLabel}
-            </button>
-          ))}
-        </div>
 
         <p className="signup-copy">
           No tienes una cuenta? <Link to="/registro">Registrate</Link>
