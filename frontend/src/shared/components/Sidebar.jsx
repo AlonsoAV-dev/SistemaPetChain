@@ -28,7 +28,7 @@ const navItems = [
   { to: '/app/configuracion', label: 'Configuración', icon: Settings },
 ];
 
-export default function Sidebar({ isCollapsed }) {
+export default function Sidebar({ isCollapsed, onNavigate }) {
   const navigate = useNavigate();
   const isAdmin = getStoredSession()?.user?.role === 'admin';
   const visibleItems = isAdmin
@@ -36,6 +36,7 @@ export default function Sidebar({ isCollapsed }) {
     : navItems;
 
   function handleLogout() {
+    onNavigate?.();
     clearSession();
     navigate('/login');
   }
@@ -45,7 +46,7 @@ export default function Sidebar({ isCollapsed }) {
       <BrandMark compact={isCollapsed} />
       <nav className="sidebar-nav" aria-label="Navegación principal">
         {visibleItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className="nav-link">
+          <NavLink key={item.to} to={item.to} end={item.end} className="nav-link" onClick={onNavigate}>
             {createElement(item.icon, { size: 20, 'aria-hidden': true })}
             <span>{item.label}</span>
           </NavLink>

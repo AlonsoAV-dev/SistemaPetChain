@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getStoredSession } from '../api/httpClient.js';
 import { interactionsApi } from '../api/vetchainApi.js';
 
-export default function Topbar({ onToggleSidebar, isSidebarCollapsed, user }) {
+export default function Topbar({ onToggleSidebar, isSidebarOpen, user }) {
   const navigate = useNavigate();
   const resolvedUser = user ?? getStoredSession()?.user;
   const displayName = resolvedUser?.name ?? 'Usuario';
@@ -38,7 +38,7 @@ export default function Topbar({ onToggleSidebar, isSidebarCollapsed, user }) {
         type="button"
         title="Abrir menú"
         onClick={onToggleSidebar}
-        aria-expanded={!isSidebarCollapsed}
+        aria-expanded={isSidebarOpen}
         aria-controls="app-sidebar"
       >
         <Menu size={21} aria-hidden="true" />
