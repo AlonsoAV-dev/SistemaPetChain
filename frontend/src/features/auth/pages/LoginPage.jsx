@@ -47,21 +47,21 @@ export default function LoginPage() {
           <BrandMark />
         </div>
         <div className="welcome-copy">
-          <h1>¡Bienvenido!</h1>
+          <h1>Bienvenido</h1>
           <h2>Ingresa</h2>
-          <p>Estás a un paso del panel comunitario de VetChain.</p>
+          <p>Estas a un paso del panel comunitario de PetChain.</p>
         </div>
       </aside>
 
       <div className="auth-form-panel">
         <header className="login-header">
-          <h1>Iniciar sesión</h1>
+          <h1>Iniciar sesion</h1>
           <p>Accede con tus credenciales para continuar.</p>
         </header>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label className="login-field">
-            <span>Correo electrónico</span>
+            <span>Correo electronico</span>
             <div className="login-input">
               <Mail size={18} aria-hidden="true" />
               <input
@@ -76,7 +76,7 @@ export default function LoginPage() {
           </label>
 
           <label className="login-field">
-            <span>Contraseña</span>
+            <span>Contrasena</span>
             <div className="login-input">
               <LockKeyhole size={18} aria-hidden="true" />
               <input
@@ -84,14 +84,14 @@ export default function LoginPage() {
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="********"
                 autoComplete="current-password"
               />
               <button
                 className="password-toggle"
                 type="button"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 onClick={() => setShowPassword((current) => !current)}
               >
                 {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
@@ -102,23 +102,23 @@ export default function LoginPage() {
           <div className="login-options">
             <label className="remember-check">
               <input type="checkbox" />
-              <span>Mantener sesión iniciada</span>
+              <span>Mantener sesion iniciada</span>
             </label>
             <a className="forgot-link" href="#recuperar">
-              ¿Olvidaste tu contraseña?
+              Olvidaste tu contrasena?
             </a>
           </div>
 
           {error && <p className="form-error">{error}</p>}
 
           <button className="button button-primary login-submit" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
+            {isSubmitting ? 'Ingresando...' : 'Iniciar sesion'}
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </form>
 
         <div className="login-divider">
-          <span>o usa redes sociales para iniciar sesión</span>
+          <span>o usa redes sociales para iniciar sesion</span>
         </div>
 
         <div className="social-row" aria-label="Opciones de acceso social">
@@ -136,7 +136,7 @@ export default function LoginPage() {
         </div>
 
         <p className="signup-copy">
-          ¿No tienes una cuenta? <Link to="/registro">Regístrate</Link>
+          No tienes una cuenta? <Link to="/registro">Registrate</Link>
         </p>
       </div>
     </section>

@@ -17,6 +17,7 @@ router.post('/login', authLimiter, asyncHandler(authController.login));
 router.post('/register', authLimiter, asyncHandler(authController.register));
 router.get('/me', requireAuth, asyncHandler(authController.me));
 router.patch('/me', requireAuth, asyncHandler(authController.updateProfile));
+router.patch('/me/password', requireAuth, authLimiter, asyncHandler(authController.updatePassword));
 
 export default router;
 

@@ -2,14 +2,14 @@ import logoUrl from '../../assets/Logo.jpg';
 
 export default function BrandMark({ compact = false }) {
   return (
-    <div className="brand" aria-label="VetChain">
+    <div className="brand" aria-label="PetChain">
       <span className="brand-mark" aria-hidden="true">
         <img
           src={logoUrl}
-          alt="VetChain"
+          alt="PetChain"
         />
       </span>
-      {!compact && <span>VetChain</span>}
+      {!compact && <span>PetChain</span>}
     </div>
   );
 }

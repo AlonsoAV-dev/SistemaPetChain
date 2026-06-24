@@ -45,6 +45,33 @@ try {
   });
   user = userSession.user;
 
+  const updatedUserProfile = await authService.updateProfile(user.id, {
+    name: 'User Test Updated',
+    email: `user-updated-${suffix}@example.com`,
+    avatarUrl: 'https://example.com/avatar-updated.jpg',
+  });
+  assert.equal(updatedUserProfile.name, 'User Test Updated');
+  assert.equal(updatedUserProfile.email, `user-updated-${suffix}@example.com`);
+  assert.equal(updatedUserProfile.avatarUrl, 'https://example.com/avatar-updated.jpg');
+  user = updatedUserProfile;
+
+  await assert.rejects(
+    authService.updatePassword(user.id, {
+      currentPassword: 'WrongPassword123',
+      newPassword: 'UserTest456',
+    }),
+    /actual no es correcta/i,
+  );
+  await authService.updatePassword(user.id, {
+    currentPassword: 'UserTest123',
+    newPassword: 'UserTest456',
+  });
+  const updatedUserSession = await authService.login({
+    email: user.email,
+    password: 'UserTest456',
+  });
+  assert.equal(updatedUserSession.user.id, user.id);
+
   otherUser = (
     await authService.register({
       name: 'Other Test',

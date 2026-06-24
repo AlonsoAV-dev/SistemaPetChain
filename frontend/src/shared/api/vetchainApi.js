@@ -41,6 +41,13 @@ export const authApi = {
     updateSessionUser(user);
     return user;
   },
+
+  async updatePassword(payload) {
+    return apiRequest('/auth/me/password', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 export const dashboardApi = {

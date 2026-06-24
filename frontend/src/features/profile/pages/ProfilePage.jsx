@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   adoptionsApi,
-  eventsApi,
   authApi,
+  eventsApi,
   lostPetsApi,
   mediaApi,
   responsibleActionsApi,
@@ -10,26 +10,41 @@ import {
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
 
+const emptyPasswordForm = {
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(() => getStoredSession()?.user ?? null);
+  const [profileForm, setProfileForm] = useState(() => ({
+    name: getStoredSession()?.user?.name ?? '',
+    email: getStoredSession()?.user?.email ?? '',
+    avatarUrl: getStoredSession()?.user?.avatarUrl ?? '',
+  }));
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [summary, setSummary] = useState({
     actions: 0,
     lostPets: 0,
     adoptions: 0,
     events: 0,
   });
-  const [error, setError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [avatarInput, setAvatarInput] = useState(() => getStoredSession()?.user?.avatarUrl ?? '');
   const [avatarFile, setAvatarFile] = useState(null);
+  const [error, setError] = useState('');
+  const [profileMessage, setProfileMessage] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   const displayName = profile?.name ?? 'Usuario';
   const avatarUrl = profile?.avatarUrl ?? '';
   const initial = displayName.charAt(0).toUpperCase();
 
   const joinedDate = useMemo(() => {
-    if (!profile?.createdAt) return '—';
+    if (!profile?.createdAt) return '-';
     const date = new Date(profile.createdAt);
-    if (Number.isNaN(date.getTime())) return '—';
+    if (Number.isNaN(date.getTime())) return '-';
     return date.toLocaleDateString('es-PE');
   }, [profile?.createdAt]);
 
@@ -56,6 +71,11 @@ export default function ProfilePage() {
 
       if (profileResult.status === 'fulfilled') {
         setProfile(profileResult.value);
+        setProfileForm({
+          name: profileResult.value.name ?? '',
+          email: profileResult.value.email ?? '',
+          avatarUrl: profileResult.value.avatarUrl ?? '',
+        });
       } else {
         setError(profileResult.reason?.message ?? 'No se pudo cargar el perfil.');
       }
@@ -73,8 +93,8 @@ export default function ProfilePage() {
     };
   }, []);
 
-  function handleAvatarUrlChange(event) {
-    setAvatarInput(event.target.value);
+  function handleProfileInput(event) {
+    setProfileForm({ ...profileForm, [event.target.name]: event.target.value });
   }
 
   function handleAvatarFileChange(event) {
@@ -82,23 +102,64 @@ export default function ProfilePage() {
     setAvatarFile(file ?? null);
   }
 
-  async function handleAvatarSubmit(event) {
+  function handlePasswordInput(event) {
+    setPasswordForm({ ...passwordForm, [event.target.name]: event.target.value });
+  }
+
+  async function handleProfileSubmit(event) {
     event.preventDefault();
     setError('');
-    setIsSaving(true);
+    setProfileMessage('');
+    setIsSavingProfile(true);
 
     try {
-      const avatarUrl = avatarFile
+      const uploadedAvatarUrl = avatarFile
         ? (await mediaApi.uploadImage(avatarFile, 'avatars')).url
-        : avatarInput;
-      const updatedProfile = await authApi.updateProfile({ avatarUrl });
+        : profileForm.avatarUrl;
+      const updatedProfile = await authApi.updateProfile({
+        name: profileForm.name,
+        email: profileForm.email,
+        avatarUrl: uploadedAvatarUrl,
+      });
+
       setProfile(updatedProfile);
-      setAvatarInput(updatedProfile.avatarUrl ?? '');
+      setProfileForm({
+        name: updatedProfile.name ?? '',
+        email: updatedProfile.email ?? '',
+        avatarUrl: updatedProfile.avatarUrl ?? '',
+      });
       setAvatarFile(null);
+      setProfileMessage('Perfil actualizado correctamente.');
     } catch (apiError) {
       setError(apiError.message);
     } finally {
-      setIsSaving(false);
+      setIsSavingProfile(false);
+    }
+  }
+
+  async function handlePasswordSubmit(event) {
+    event.preventDefault();
+    setError('');
+    setPasswordMessage('');
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError('La confirmacion no coincide con la nueva contrasena.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      await authApi.updatePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm(emptyPasswordForm);
+      setPasswordMessage('Contrasena actualizada correctamente.');
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setIsChangingPassword(false);
     }
   }
 
@@ -107,14 +168,14 @@ export default function ProfilePage() {
       <section className="page-header">
         <div className="page-title">
           <h1>{profile?.name ? `Perfil de ${profile.name}` : 'Perfil'}</h1>
-          <p>Consulta tu informacion personal y estado dentro de VetChain.</p>
+          <p>Actualiza tus datos personales, avatar y contrasena.</p>
         </div>
       </section>
 
       <section className="panel">
         <div className="panel-title">
           <h2>Informacion personal</h2>
-          <p>Estos datos se usan para tu identificacion dentro de la comunidad.</p>
+          <p>Estos datos se muestran dentro de la comunidad y se guardan en tu cuenta.</p>
         </div>
 
         <div className="profile-header">
@@ -127,54 +188,113 @@ export default function ProfilePage() {
           </span>
           <div>
             <strong>{displayName}</strong>
-            <span>{profile?.email ?? '—'}</span>
+            <span>{profile?.email ?? '-'}</span>
           </div>
         </div>
 
         {error && <p className="form-error">{error}</p>}
+        {profileMessage && <p className="form-success">{profileMessage}</p>}
 
-        <div className="form-stack">
+        <form className="form-stack" onSubmit={handleProfileSubmit}>
           <label className="field">
             <span>Nombre</span>
-            <input className="input" value={displayName} readOnly />
+            <input
+              className="input"
+              name="name"
+              required
+              minLength={2}
+              value={profileForm.name}
+              onChange={handleProfileInput}
+            />
           </label>
           <label className="field">
             <span>Correo electronico</span>
-            <input className="input" value={profile?.email ?? ''} readOnly />
+            <input
+              className="input"
+              name="email"
+              type="email"
+              required
+              value={profileForm.email}
+              onChange={handleProfileInput}
+            />
           </label>
           <label className="field">
             <span>Rol</span>
-            <input className="input" value={profile?.role ?? 'usuario'} readOnly />
+            <input className="input" value={profile?.role ?? 'user'} readOnly />
           </label>
           <label className="field">
             <span>Miembro desde</span>
             <input className="input" value={joinedDate} readOnly />
           </label>
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-title">
-          <h2>Avatar</h2>
-          <p>Sube una imagen o pega un enlace para actualizar tu perfil.</p>
-        </div>
-
-        <form className="form-stack" onSubmit={handleAvatarSubmit}>
           <label className="field">
-            <span>Subir imagen</span>
+            <span>Subir avatar</span>
             <input className="input" type="file" accept="image/*" onChange={handleAvatarFileChange} />
           </label>
           <label className="field">
             <span>URL de avatar</span>
             <input
               className="input"
-              value={avatarInput}
-              onChange={handleAvatarUrlChange}
+              name="avatarUrl"
+              value={profileForm.avatarUrl}
+              onChange={handleProfileInput}
               placeholder="https://"
             />
           </label>
-          <button className="button button-primary" type="submit" disabled={isSaving}>
-            {isSaving ? 'Guardando...' : 'Actualizar avatar'}
+          <button className="button button-primary" type="submit" disabled={isSavingProfile}>
+            {isSavingProfile ? 'Guardando...' : 'Guardar perfil'}
+          </button>
+        </form>
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <h2>Cambiar contrasena</h2>
+          <p>Por seguridad debes ingresar tu contrasena actual.</p>
+        </div>
+
+        {passwordMessage && <p className="form-success">{passwordMessage}</p>}
+
+        <form className="form-stack" onSubmit={handlePasswordSubmit}>
+          <label className="field">
+            <span>Contrasena actual</span>
+            <input
+              className="input"
+              name="currentPassword"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={passwordForm.currentPassword}
+              onChange={handlePasswordInput}
+            />
+          </label>
+          <label className="field">
+            <span>Nueva contrasena</span>
+            <input
+              className="input"
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={passwordForm.newPassword}
+              onChange={handlePasswordInput}
+            />
+          </label>
+          <label className="field">
+            <span>Confirmar nueva contrasena</span>
+            <input
+              className="input"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={passwordForm.confirmPassword}
+              onChange={handlePasswordInput}
+            />
+          </label>
+          <button className="button button-primary" type="submit" disabled={isChangingPassword}>
+            {isChangingPassword ? 'Actualizando...' : 'Cambiar contrasena'}
           </button>
         </form>
       </section>

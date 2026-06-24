@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bookmark, CalendarDays, Heart, PawPrint, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { authApi, dashboardApi } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
@@ -11,6 +12,7 @@ const activityIcons = {
 };
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState({
     user: getStoredSession()?.user ?? null,
     summary: {
@@ -57,6 +59,8 @@ export default function DashboardPage() {
     };
   }, []);
 
+  const goToArticle = (article) => navigate(`/app/articulos/${article.id}`);
+
   return (
     <>
       <section className="page-header dashboard-hero">
@@ -65,7 +69,7 @@ export default function DashboardPage() {
             {dashboard.user?.name ? `Bienvenida, ${dashboard.user.name}` : 'Bienvenida'}{' '}
             <PawPrint size={28} aria-hidden="true" />
           </h1>
-          <p>Gracias por ser parte de la comunidad VetChain.</p>
+          <p>Gracias por ser parte de la comunidad PetChain.</p>
         </div>
       </section>
 
@@ -82,18 +86,32 @@ export default function DashboardPage() {
             <div className="panel-title">
               <h2>Artículos recomendados</h2>
             </div>
-            <button className="text-button" type="button">Ver todos</button>
+            <button className="text-button" type="button" onClick={() => navigate('/app/articulos')}>Ver todos</button>
           </div>
 
           <div className="article-grid">
             {dashboard.articles.map((article) => (
-              <article className="article-card" key={article.id}>
+              <article
+                className="article-card clickable-card"
+                key={article.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => goToArticle(article)}
+                onKeyDown={(event) => event.key === 'Enter' && goToArticle(article)}
+              >
                 <img src={article.image} alt={article.title} />
                 <div className="article-card-body">
                   <span className="category-pill">{article.category}</span>
                   <h3>{article.title}</h3>
                   <p>{article.description}</p>
-                  <button className="read-more-button" type="button">
+                  <button
+                    className="read-more-button"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      goToArticle(article);
+                    }}
+                  >
                     Leer más
                     <span aria-hidden="true">→</span>
                   </button>

@@ -48,8 +48,8 @@ export default function RegisterPage() {
           <BrandMark />
         </div>
         <div className="welcome-copy">
-          <h1>¡Bienvenido!</h1>
-          <h2>Regístrate</h2>
+          <h1>Bienvenido</h1>
+          <h2>Registrate</h2>
           <p>Crea tu cuenta para participar en acciones, adopciones y reportes.</p>
         </div>
       </aside>
@@ -57,7 +57,7 @@ export default function RegisterPage() {
       <div className="auth-form-panel">
         <header className="login-header">
           <h1>Crear cuenta</h1>
-          <p>Completa tus datos para unirte a VetChain.</p>
+          <p>Completa tus datos para unirte a PetChain.</p>
         </header>
 
         <form className="login-form" onSubmit={handleSubmit}>
@@ -77,7 +77,7 @@ export default function RegisterPage() {
           </label>
 
           <label className="login-field">
-            <span>Correo electrónico</span>
+            <span>Correo electronico</span>
             <div className="login-input">
               <Mail size={18} aria-hidden="true" />
               <input
@@ -85,14 +85,14 @@ export default function RegisterPage() {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="correo@vetchain.org"
+                placeholder="correo@petchain.org"
                 autoComplete="email"
               />
             </div>
           </label>
 
           <label className="login-field">
-            <span>Contraseña</span>
+            <span>Contrasena</span>
             <div className="login-input">
               <LockKeyhole size={18} aria-hidden="true" />
               <input
@@ -100,14 +100,14 @@ export default function RegisterPage() {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="********"
                 autoComplete="new-password"
               />
               <button
                 className="password-toggle"
                 type="button"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 onClick={() => setShowPassword((current) => !current)}
               >
                 {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
@@ -142,7 +142,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="signup-copy">
-          ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
+          Ya tienes una cuenta? <Link to="/login">Inicia sesion</Link>
         </p>
       </div>
     </section>

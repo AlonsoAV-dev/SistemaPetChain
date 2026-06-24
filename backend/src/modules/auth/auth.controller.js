@@ -21,13 +21,27 @@ export function me(req, res) {
 }
 
 export async function updateProfile(req, res) {
-  const { avatarUrl } = req.body ?? {};
+  const { avatarUrl, email, name } = req.body ?? {};
 
   if (avatarUrl !== undefined && avatarUrl !== null && typeof avatarUrl !== 'string') {
     throw httpError(400, 'Avatar invalido.');
   }
 
-  const data = await authService.updateProfile(req.user.id, { avatarUrl });
+  if (email !== undefined && typeof email !== 'string') {
+    throw httpError(400, 'Correo invalido.');
+  }
+
+  if (name !== undefined && typeof name !== 'string') {
+    throw httpError(400, 'Nombre invalido.');
+  }
+
+  const data = await authService.updateProfile(req.user.id, { avatarUrl, email, name });
   res.json({ data });
 }
 
+export async function updatePassword(req, res) {
+  requireFields(req.body, ['currentPassword', 'newPassword']);
+  const data = await authService.updatePassword(req.user.id, req.body);
+
+  res.json({ data });
+}
