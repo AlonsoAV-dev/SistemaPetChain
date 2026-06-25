@@ -1,6 +1,6 @@
 import { ArrowLeft, Camera, Edit3, MapPin, Phone } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { interactionsApi, lostPetsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -33,6 +33,7 @@ const emptyEditForm = {
 
 export default function LostPetDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const session = getStoredSession();
   const [pet, setPet] = useState(null);
   const [reports, setReports] = useState([]);
@@ -135,10 +136,14 @@ export default function LostPetDetailPage() {
   const isOwner = pet.ownerId === session?.user?.id;
   const canManage = isOwner || session?.user?.role === 'admin';
   const active = pet.status === 'Activo';
+  const fromAdmin = searchParams.get('from');
+  const backLink = fromAdmin?.startsWith('admin-')
+    ? { to: fromAdmin === 'admin-moderation' ? '/app/admin' : '/app/admin/publicaciones', label: 'Volver a administración' }
+    : { to: '/app/mascotas-perdidas', label: 'Volver a mascotas perdidas' };
 
   return (
     <section className="detail-page">
-      <Link className="back-link" to="/app/mascotas-perdidas"><ArrowLeft size={17} /> Volver a mascotas perdidas</Link>
+      <Link className="back-link" to={backLink.to}><ArrowLeft size={17} /> {backLink.label}</Link>
       {error && <p className="form-error">{error}</p>}
       {message && <p className="form-success">{message}</p>}
 

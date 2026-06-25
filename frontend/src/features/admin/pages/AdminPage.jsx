@@ -2,11 +2,12 @@ import {
   Check,
   Clock,
   ExternalLink,
-  FileText,
-  MessageCircle,
+  Heart,
+  Plus,
   Search,
   ShieldCheck,
   Trash2,
+  Trophy,
   UserPlus,
   UserRoundCheck,
   UserRoundX,
@@ -14,11 +15,39 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../../shared/api/vetchainApi.js';
 import Modal from '../../../shared/components/Modal.jsx';
 import StatCard from '../../../shared/components/StatCard.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
+
+const validSections = new Set(['moderation', 'publications', 'comments', 'users']);
+
+const sectionMeta = {
+  moderation: {
+    title: 'Panel administrativo',
+    description: 'Revisa lo urgente: publicaciones pendientes, estado general y accesos rápidos.',
+  },
+  publications: {
+    title: 'Gestión de publicaciones',
+    description: 'Filtra adopciones, mascotas perdidas y acciones responsables para revisar su estado.',
+  },
+  comments: {
+    title: 'Gestión de comentarios',
+    description: 'Modera comentarios publicados en las publicaciones del sistema.',
+  },
+  users: {
+    title: 'Gestión de usuarios',
+    description: 'Crea usuarios, revisa roles, actividad y fecha de registro.',
+  },
+};
+
+const adminRoutes = {
+  moderation: '/app/admin',
+  publications: '/app/admin/publicaciones',
+  comments: '/app/admin/comentarios',
+  users: '/app/admin/usuarios',
+};
 
 const typeLabels = {
   lost_pet: 'Mascota perdida',
@@ -33,6 +62,27 @@ const publicationTypeFilters = [
   { value: 'responsible_action', label: 'Acciones responsables' },
 ];
 
+const publicationCreateActions = [
+  {
+    to: '/app/adopciones?create=1&from=admin-publications',
+    label: 'Nueva adopción',
+    description: 'Publica una mascota disponible para adopción responsable.',
+    icon: Heart,
+  },
+  {
+    to: '/app/mascotas-perdidas?create=1&from=admin-publications',
+    label: 'Mascota perdida',
+    description: 'Registra un caso de búsqueda con fotos y datos de contacto.',
+    icon: Search,
+  },
+  {
+    to: '/app/acciones?create=1&from=admin-publications',
+    label: 'Acción responsable',
+    description: 'Comparte campañas, rescates o actividades comunitarias.',
+    icon: Trophy,
+  },
+];
+
 const emptyUserForm = {
   name: '',
   email: '',
@@ -40,14 +90,25 @@ const emptyUserForm = {
   role: 'user',
 };
 
-function publicationPath(item) {
-  if (item.type === 'lost_pet') return `/app/mascotas-perdidas/${item.id}`;
-  if (item.type === 'adoption') return `/app/adopciones/${item.id}`;
-  return `/app/acciones/${item.id}`;
+function formatDate(value) {
+  if (!value) return 'Sin fecha';
+  return new Date(value).toLocaleDateString('es-PE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
-export default function AdminPage() {
-  const [tab, setTab] = useState('moderation');
+function publicationPath(item, fromSection) {
+  const from = `from=admin-${fromSection}`;
+  if (item.type === 'lost_pet') return `/app/mascotas-perdidas/${item.id}?${from}`;
+  if (item.type === 'adoption') return `/app/adopciones/${item.id}?${from}`;
+  return `/app/acciones/${item.id}?${from}`;
+}
+
+export default function AdminPage({ section = 'moderation' }) {
+  const navigate = useNavigate();
+  const tab = validSections.has(section) ? section : 'moderation';
   const [summary, setSummary] = useState({ users: 0, pending: 0, approved: 0, rejected: 0, comments: 0 });
   const [moderation, setModeration] = useState([]);
   const [publications, setPublications] = useState([]);
@@ -82,6 +143,7 @@ export default function AdminPage() {
   }, [loadData]);
 
   const normalizedQuery = query.toLowerCase();
+  const sectionInfo = sectionMeta[tab];
   const matchesPublicationType = useCallback(
     (item) => publicationType === 'all' || item.type === publicationType || item.publicationType === publicationType,
     [publicationType],
@@ -106,7 +168,6 @@ export default function AdminPage() {
     () => users.filter((item) => `${item.name} ${item.email}`.toLowerCase().includes(normalizedQuery)),
     [users, normalizedQuery],
   );
-
   async function approve(id) {
     setBusy(true);
     setError('');
@@ -164,7 +225,7 @@ export default function AdminPage() {
       await adminApi.createUser(userForm);
       setUserForm(emptyUserForm);
       setCreatingUser(false);
-      setTab('users');
+      navigate(adminRoutes.users);
       await loadData();
     } catch (apiError) {
       setError(apiError.message);
@@ -177,28 +238,75 @@ export default function AdminPage() {
     <section className="module-section">
       <header className="module-header">
         <div>
-          <h1>Panel administrativo</h1>
-          <p>Modera publicaciones y comentarios, y controla el estado de los usuarios.</p>
+          <h1>{sectionInfo.title}</h1>
+          <p>{sectionInfo.description}</p>
         </div>
-        <button className="button button-primary" type="button" onClick={() => { setUserForm(emptyUserForm); setCreatingUser(true); }}>
-          <UserPlus size={18} /> Crear usuario
-        </button>
+        {tab === 'users' && (
+          <button className="button button-primary" type="button" onClick={() => { setUserForm(emptyUserForm); setCreatingUser(true); }}>
+            <UserPlus size={18} /> Crear usuario
+          </button>
+        )}
       </header>
 
-      <section className="stats-grid">
-        <StatCard icon={Clock} label="Pendientes" value={summary.pending} detail="Esperando revisión" />
-        <StatCard icon={ShieldCheck} label="Aprobadas" value={summary.approved} detail="Contenido publicado" />
-        <StatCard icon={XCircle} label="Rechazadas" value={summary.rejected} detail="Contenido observado" />
-        <StatCard icon={Users} label="Usuarios" value={summary.users} detail={`${summary.comments} comentarios`} />
-      </section>
+      {tab === 'moderation' && (
+        <>
+          <section className="stats-grid">
+            <a className="stat-card-link" href="#pendientes-aprobacion">
+              <StatCard icon={Clock} label="Pendientes" value={summary.pending} detail="Requieren aprobación" />
+            </a>
+            <Link className="stat-card-link" to={adminRoutes.publications}>
+              <StatCard icon={ShieldCheck} label="Aprobadas" value={summary.approved} detail="Ver publicaciones" />
+            </Link>
+            <Link className="stat-card-link" to={adminRoutes.publications}>
+              <StatCard icon={XCircle} label="Rechazadas" value={summary.rejected} detail="Ver observadas" />
+            </Link>
+            <Link className="stat-card-link" to={adminRoutes.users}>
+              <StatCard icon={Users} label="Usuarios" value={summary.users} detail="Ir a usuarios" />
+            </Link>
+          </section>
+        </>
+      )}
 
       <section className="panel admin-workspace">
-        <div className="admin-tabs">
-          <button className={tab === 'moderation' ? 'active' : ''} type="button" onClick={() => setTab('moderation')}><Clock size={17} /> Moderación <span>{summary.pending}</span></button>
-          <button className={tab === 'publications' ? 'active' : ''} type="button" onClick={() => setTab('publications')}><FileText size={17} /> Publicaciones</button>
-          <button className={tab === 'comments' ? 'active' : ''} type="button" onClick={() => setTab('comments')}><MessageCircle size={17} /> Comentarios</button>
-          <button className={tab === 'users' ? 'active' : ''} type="button" onClick={() => setTab('users')}><Users size={17} /> Usuarios</button>
-        </div>
+        {tab === 'moderation' && (
+          <div className="admin-section-heading" id="pendientes-aprobacion">
+            <div>
+              <span className="eyebrow">Moderación</span>
+              <h2>Publicaciones pendientes por aprobar</h2>
+              <p>Revisa cada solicitud y decide si se publica o se devuelve con observaciones.</p>
+            </div>
+            <strong>{filteredModeration.length} pendientes</strong>
+          </div>
+        )}
+
+        {tab === 'publications' && (
+          <div className="admin-create-panel">
+            <div className="admin-section-heading">
+              <div>
+                <span className="eyebrow">Crear contenido</span>
+                <h2>Nueva publicación</h2>
+                <p>Como admin puedes publicar directamente adopciones, mascotas perdidas o acciones responsables.</p>
+              </div>
+            </div>
+            <div className="admin-create-grid">
+              {publicationCreateActions.map((action) => {
+                const Icon = action.icon;
+
+                return (
+                  <Link className="admin-create-card" key={action.to} to={action.to}>
+                    <span><Icon size={20} aria-hidden="true" /></span>
+                    <div>
+                      <strong>{action.label}</strong>
+                      <small>{action.description}</small>
+                    </div>
+                    <Plus size={18} aria-hidden="true" />
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="admin-filterbar">
           {(tab === 'moderation' || tab === 'publications') && (
             <div className="segmented-tabs publication-type-tabs" aria-label="Filtrar publicaciones por tipo">
@@ -229,7 +337,7 @@ export default function AdminPage() {
                   <p>{item.description}</p>
                 </div>
                 <div className="admin-actions">
-                  <Link className="button button-secondary" to={publicationPath(item)}><ExternalLink size={16} /> Ver detalle</Link>
+                  <Link className="button button-secondary" to={publicationPath(item, 'moderation')}><ExternalLink size={16} /> Ver detalle</Link>
                   <button className="button button-primary" disabled={busy} type="button" onClick={() => approve(item.id)}><Check size={17} /> Aprobar</button>
                   <button className="button button-danger" disabled={busy} type="button" onClick={() => { setRejecting(item); setReason(''); }}><XCircle size={17} /> Rechazar</button>
                 </div>
@@ -251,7 +359,7 @@ export default function AdminPage() {
                     <td><StatusBadge status={item.status} />{item.rejectionReason && <small>{item.rejectionReason}</small>}</td>
                     <td>{item.commentsCount}</td>
                     <td>{item.pointsAwarded}</td>
-                    <td><Link className="button button-secondary" to={publicationPath(item)}><ExternalLink size={15} /> Ver</Link></td>
+                    <td><Link className="button button-secondary" to={publicationPath(item, 'publications')}><ExternalLink size={15} /> Ver</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -279,12 +387,13 @@ export default function AdminPage() {
         {tab === 'users' && (
           <div className="admin-table-wrap">
             <table className="admin-table">
-              <thead><tr><th>Usuario</th><th>Rol</th><th>Publicaciones</th><th>Puntos</th><th>Estado</th><th>Acción</th></tr></thead>
+              <thead><tr><th>Usuario</th><th>Rol</th><th>Registro</th><th>Publicaciones</th><th>Puntos</th><th>Estado</th><th>Acción</th></tr></thead>
               <tbody>
                 {filteredUsers.map((user) => (
                   <tr key={user.id}>
                     <td><strong>{user.name}</strong><small>{user.email}</small></td>
                     <td>{user.role}</td>
+                    <td>{formatDate(user.createdAt)}</td>
                     <td>{user.publicationsCount}</td>
                     <td>{user.points}</td>
                     <td><StatusBadge status={user.status === 'active' ? 'Activo' : 'Suspendido'} /></td>

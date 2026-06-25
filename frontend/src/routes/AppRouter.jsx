@@ -18,7 +18,13 @@ import LostPetDetailPage from '../features/lostPets/pages/LostPetDetailPage.jsx'
 import ProfilePage from '../features/profile/pages/ProfilePage.jsx';
 import AuthLayout from '../layouts/AuthLayout.jsx';
 import DashboardLayout from '../layouts/DashboardLayout.jsx';
+import { getStoredSession } from '../shared/api/httpClient.js';
 import ProtectedRoute from '../shared/components/ProtectedRoute.jsx';
+
+function AppIndexRoute() {
+  const isAdmin = getStoredSession()?.user?.role === 'admin';
+  return isAdmin ? <Navigate to="/app/admin" replace /> : <DashboardPage />;
+}
 
 export default function AppRouter() {
   return (
@@ -28,7 +34,7 @@ export default function AppRouter() {
       <Route path="/registro" element={<AuthLayout><RegisterPage /></AuthLayout>} />
       <Route path="/register" element={<Navigate to="/registro" replace />} />
       <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route index element={<DashboardPage />} />
+        <Route index element={<AppIndexRoute />} />
         <Route path="articulos" element={<ArticlesPage />} />
         <Route path="articulos/:id" element={<ArticleDetailPage />} />
         <Route path="educacion" element={<Navigate to="/app/articulos" replace />} />
@@ -45,7 +51,10 @@ export default function AppRouter() {
         <Route path="fundaciones" element={<FoundationsPage />} />
         <Route path="perfil" element={<ProfilePage />} />
         <Route path="configuracion" element={<Navigate to="/app/perfil" replace />} />
-        <Route path="admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
+        <Route path="admin" element={<ProtectedRoute adminOnly><AdminPage section="moderation" /></ProtectedRoute>} />
+        <Route path="admin/publicaciones" element={<ProtectedRoute adminOnly><AdminPage section="publications" /></ProtectedRoute>} />
+        <Route path="admin/comentarios" element={<ProtectedRoute adminOnly><AdminPage section="comments" /></ProtectedRoute>} />
+        <Route path="admin/usuarios" element={<ProtectedRoute adminOnly><AdminPage section="users" /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/app" replace />} />
     </Routes>

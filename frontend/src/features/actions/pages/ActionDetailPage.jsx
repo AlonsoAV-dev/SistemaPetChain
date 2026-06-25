@@ -1,6 +1,6 @@
 import { ArrowLeft, CalendarDays, MapPin, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { responsibleActionsApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
 import PhotoGallery from '../../../shared/components/PhotoGallery.jsx';
@@ -8,6 +8,7 @@ import StatusBadge from '../../../shared/components/StatusBadge.jsx';
 
 export default function ActionDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const [action, setAction] = useState(null);
   const [error, setError] = useState('');
 
@@ -17,9 +18,14 @@ export default function ActionDetailPage() {
 
   if (!action) return <div className="empty-state">{error || 'Cargando publicación...'}</div>;
 
+  const fromAdmin = searchParams.get('from');
+  const backLink = fromAdmin?.startsWith('admin-')
+    ? { to: fromAdmin === 'admin-moderation' ? '/app/admin' : '/app/admin/publicaciones', label: 'Volver a administración' }
+    : { to: '/app/acciones', label: 'Volver a acciones responsables' };
+
   return (
     <section className="detail-page">
-      <Link className="back-link" to="/app/acciones"><ArrowLeft size={17} /> Volver a acciones responsables</Link>
+      <Link className="back-link" to={backLink.to}><ArrowLeft size={17} /> {backLink.label}</Link>
       <div className="detail-layout">
         <PhotoGallery images={[action.evidenceUrl].filter(Boolean)} alt={action.title} />
         <article className="detail-summary">

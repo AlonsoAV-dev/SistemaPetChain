@@ -1,6 +1,6 @@
 import { Edit3, Eye, MessageCircle, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { lostPetsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -16,7 +16,10 @@ const emptyForm = {
 export default function LostPetsPage() {
   const session = getStoredSession();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const canPublish = Boolean(session?.user);
+  const returnToAdmin = searchParams.get('from') === 'admin-publications';
+  const shouldOpenCreate = searchParams.get('create') === '1';
   const [tab, setTab] = useState('public');
   const [pets, setPets] = useState([]);
   const [myPets, setMyPets] = useState([]);
@@ -28,6 +31,13 @@ export default function LostPetsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const openCreate = useCallback(() => {
+    setEditing(null);
+    setImageFiles([]);
+    setForm({ ...emptyForm, contactName: session?.user?.name ?? '' });
+    setFormOpen(true);
+  }, [session?.user?.name]);
 
   const loadData = useCallback(async () => {
     const [publicResult, mineResult] = await Promise.all([
@@ -42,19 +52,16 @@ export default function LostPetsPage() {
     loadData().catch((apiError) => setError(apiError.message));
   }, [loadData]);
 
+  useEffect(() => {
+    if (shouldOpenCreate && canPublish) openCreate();
+  }, [shouldOpenCreate, canPublish, openCreate]);
+
   const visiblePets = tab === 'mine' ? myPets : pets;
   const filteredPets = useMemo(
     () => visiblePets.filter((pet) =>
       `${pet.name} ${pet.zone} ${pet.type} ${pet.breed ?? ''}`.toLowerCase().includes(query.toLowerCase())),
     [visiblePets, query],
   );
-
-  function openCreate() {
-    setEditing(null);
-    setImageFiles([]);
-    setForm({ ...emptyForm, contactName: session?.user?.name ?? '' });
-    setFormOpen(true);
-  }
 
   function openEdit(pet) {
     setEditing(pet);
@@ -75,6 +82,11 @@ export default function LostPetsPage() {
     setFormOpen(true);
   }
 
+  function closeForm() {
+    setFormOpen(false);
+    if (returnToAdmin && !editing) navigate('/app/admin/publicaciones');
+  }
+
   async function submit(event) {
     event.preventDefault();
     setSaving(true);
@@ -87,6 +99,10 @@ export default function LostPetsPage() {
       if (editing) await lostPetsApi.update(editing.id, { ...form, imageUrls });
       else await lostPetsApi.create({ ...form, imageUrls });
       await loadData();
+      if (returnToAdmin && !editing) {
+        navigate('/app/admin/publicaciones');
+        return;
+      }
       setTab('mine');
       setFormOpen(false);
     } catch (apiError) {
@@ -155,7 +171,7 @@ export default function LostPetsPage() {
         ))}
       </div>
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? 'Editar mascota perdida' : 'Reportar mascota perdida'} description={session?.user?.role === 'admin' ? 'Como administrador, esta publicación aparecerá inmediatamente.' : 'La publicación será revisada antes de aparecer públicamente.'} size="lg">
+      <Modal open={formOpen} onClose={closeForm} title={editing ? 'Editar mascota perdida' : 'Reportar mascota perdida'} description={session?.user?.role === 'admin' ? 'Como administrador, esta publicación aparecerá inmediatamente.' : 'La publicación será revisada antes de aparecer públicamente.'} size="lg">
         <form className="modal-form-grid" onSubmit={submit}>
           <label className="field"><span>Nombre</span><input className="input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
           <label className="field"><span>Tipo</span><select className="select" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}><option>Perro</option><option>Gato</option><option>Ave</option><option>Otro</option></select></label>
@@ -169,7 +185,7 @@ export default function LostPetsPage() {
           {editing && <label className="field"><span>Estado del caso</span><select className="select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}><option value="active">Activo</option><option value="found">Encontrado</option><option value="closed">Cerrado</option></select></label>}
           <label className="field field-full"><span>Fotografías (hasta 6)</span><input className="input" type="file" accept="image/jpeg,image/png,image/webp" multiple required={!editing} onChange={(e) => setImageFiles([...e.target.files].slice(0, 6))} /></label>
           <label className="field field-full"><span>Descripción y señas particulares</span><textarea className="textarea" required minLength={10} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-          <div className="modal-actions field-full"><button className="button button-secondary" type="button" onClick={() => setFormOpen(false)}>Cancelar</button><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando...' : editing ? 'Guardar cambios' : session?.user?.role === 'admin' ? 'Publicar ahora' : 'Enviar a revisión'}</button></div>
+          <div className="modal-actions field-full"><button className="button button-secondary" type="button" onClick={closeForm}>Cancelar</button><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando...' : editing ? 'Guardar cambios' : session?.user?.role === 'admin' ? 'Publicar ahora' : 'Enviar a revisión'}</button></div>
         </form>
       </Modal>
 

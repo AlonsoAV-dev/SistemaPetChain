@@ -1,6 +1,6 @@
 import { Edit3, Eye, Heart, MessageCircle, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { adoptionsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -17,7 +17,10 @@ const emptyForm = {
 export default function AdoptionsPage() {
   const session = getStoredSession();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const canPublish = Boolean(session?.user);
+  const returnToAdmin = searchParams.get('from') === 'admin-publications';
+  const shouldOpenCreate = searchParams.get('create') === '1';
   const [tab, setTab] = useState('public');
   const [pets, setPets] = useState([]);
   const [myPets, setMyPets] = useState([]);
@@ -29,6 +32,13 @@ export default function AdoptionsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const openCreate = useCallback(() => {
+    setEditing(null);
+    setImageFiles([]);
+    setForm({ ...emptyForm, contactName: session?.user?.name ?? '' });
+    setFormOpen(true);
+  }, [session?.user?.name]);
 
   const loadData = useCallback(async () => {
     const [publicResult, mineResult] = await Promise.all([
@@ -43,19 +53,16 @@ export default function AdoptionsPage() {
     loadData().catch((apiError) => setError(apiError.message));
   }, [loadData]);
 
+  useEffect(() => {
+    if (shouldOpenCreate && canPublish) openCreate();
+  }, [shouldOpenCreate, canPublish, openCreate]);
+
   const visiblePets = tab === 'mine' ? myPets : pets;
   const filteredPets = useMemo(
     () => visiblePets.filter((pet) =>
       `${pet.name} ${pet.type} ${pet.breed ?? ''} ${pet.personality}`.toLowerCase().includes(query.toLowerCase())),
     [visiblePets, query],
   );
-
-  function openCreate() {
-    setEditing(null);
-    setImageFiles([]);
-    setForm({ ...emptyForm, contactName: session?.user?.name ?? '' });
-    setFormOpen(true);
-  }
 
   function openEdit(pet) {
     setEditing(pet);
@@ -77,6 +84,11 @@ export default function AdoptionsPage() {
     setFormOpen(true);
   }
 
+  function closeForm() {
+    setFormOpen(false);
+    if (returnToAdmin && !editing) navigate('/app/admin/publicaciones');
+  }
+
   async function submit(event) {
     event.preventDefault();
     setSaving(true);
@@ -89,6 +101,10 @@ export default function AdoptionsPage() {
       if (editing) await adoptionsApi.update(editing.id, { ...form, imageUrls });
       else await adoptionsApi.create({ ...form, imageUrls });
       await loadData();
+      if (returnToAdmin && !editing) {
+        navigate('/app/admin/publicaciones');
+        return;
+      }
       setTab('mine');
       setFormOpen(false);
     } catch (apiError) {
@@ -155,7 +171,7 @@ export default function AdoptionsPage() {
         ))}
       </div>
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? 'Editar adopción' : 'Publicar mascota en adopción'} description={session?.user?.role === 'admin' ? 'Como administrador, esta publicación aparecerá inmediatamente.' : 'La publicación será revisada antes de aparecer en el catálogo.'} size="lg">
+      <Modal open={formOpen} onClose={closeForm} title={editing ? 'Editar adopción' : 'Publicar mascota en adopción'} description={session?.user?.role === 'admin' ? 'Como administrador, esta publicación aparecerá inmediatamente.' : 'La publicación será revisada antes de aparecer en el catálogo.'} size="lg">
         <form className="modal-form-grid" onSubmit={submit}>
           <label className="field"><span>Nombre</span><input className="input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
           <label className="field"><span>Tipo</span><select className="select" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}><option>Perro</option><option>Gato</option><option>Conejo</option><option>Otro</option></select></label>
@@ -169,7 +185,7 @@ export default function AdoptionsPage() {
           <label className="field field-full"><span>Historia, cuidados y requisitos</span><textarea className="textarea" required minLength={10} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
           <label className="field field-full"><span>Fotografías (hasta 6)</span><input className="input" type="file" accept="image/jpeg,image/png,image/webp" multiple required={!editing} onChange={(e) => setImageFiles([...e.target.files].slice(0, 6))} /></label>
           <div className="check-row"><label><input type="checkbox" checked={form.vaccinated} onChange={(e) => setForm({ ...form, vaccinated: e.target.checked })} /> Vacunada</label><label><input type="checkbox" checked={form.sterilized} onChange={(e) => setForm({ ...form, sterilized: e.target.checked })} /> Esterilizada</label></div>
-          <div className="modal-actions field-full"><button className="button button-secondary" type="button" onClick={() => setFormOpen(false)}>Cancelar</button><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando...' : editing ? 'Guardar cambios' : session?.user?.role === 'admin' ? 'Publicar ahora' : 'Enviar a revisión'}</button></div>
+          <div className="modal-actions field-full"><button className="button button-secondary" type="button" onClick={closeForm}>Cancelar</button><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando...' : editing ? 'Guardar cambios' : session?.user?.role === 'admin' ? 'Publicar ahora' : 'Enviar a revisión'}</button></div>
         </form>
       </Modal>
 

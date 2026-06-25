@@ -1,6 +1,6 @@
 import { ArrowLeft, Check, Edit3, Heart, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { adoptionsApi, interactionsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -35,6 +35,7 @@ const emptyEditForm = {
 
 export default function AdoptionDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const session = getStoredSession();
   const [pet, setPet] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -136,10 +137,14 @@ export default function AdoptionDetailPage() {
   const isOwner = pet.ownerId === session?.user?.id;
   const canManage = isOwner || session?.user?.role === 'admin';
   const available = pet.status === 'En adopción';
+  const fromAdmin = searchParams.get('from');
+  const backLink = fromAdmin?.startsWith('admin-')
+    ? { to: fromAdmin === 'admin-moderation' ? '/app/admin' : '/app/admin/publicaciones', label: 'Volver a administración' }
+    : { to: '/app/adopciones', label: 'Volver a adopciones' };
 
   return (
     <section className="detail-page">
-      <Link className="back-link" to="/app/adopciones"><ArrowLeft size={17} /> Volver a adopciones</Link>
+      <Link className="back-link" to={backLink.to}><ArrowLeft size={17} /> {backLink.label}</Link>
       {error && <p className="form-error">{error}</p>}
       {message && <p className="form-success">{message}</p>}
 

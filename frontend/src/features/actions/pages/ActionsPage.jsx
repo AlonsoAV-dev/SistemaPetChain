@@ -1,6 +1,6 @@
 import { Edit3, Eye, Heart, MessageCircle, Plus, Search, Trash2, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { mediaApi, responsibleActionsApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -19,7 +19,10 @@ const emptyForm = {
 export default function ActionsPage() {
   const session = getStoredSession();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const canPublish = Boolean(session?.user);
+  const returnToAdmin = searchParams.get('from') === 'admin-publications';
+  const shouldOpenCreate = searchParams.get('create') === '1';
   const [tab, setTab] = useState('public');
   const [actions, setActions] = useState([]);
   const [myActions, setMyActions] = useState([]);
@@ -31,6 +34,13 @@ export default function ActionsPage() {
   const [commentsFor, setCommentsFor] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const openCreate = useCallback(() => {
+    setEditing(null);
+    setImageFile(null);
+    setForm(emptyForm);
+    setFormOpen(true);
+  }, []);
 
   const loadData = useCallback(async () => {
     const requests = [responsibleActionsApi.list()];
@@ -44,19 +54,16 @@ export default function ActionsPage() {
     loadData().catch((apiError) => setError(apiError.message));
   }, [loadData]);
 
+  useEffect(() => {
+    if (shouldOpenCreate && canPublish) openCreate();
+  }, [shouldOpenCreate, canPublish, openCreate]);
+
   const visibleActions = tab === 'mine' ? myActions : actions;
   const filteredActions = useMemo(
     () => visibleActions.filter((action) =>
       `${action.title} ${action.category} ${action.author}`.toLowerCase().includes(query.toLowerCase())),
     [visibleActions, query],
   );
-
-  function openCreate() {
-    setEditing(null);
-    setImageFile(null);
-    setForm(emptyForm);
-    setFormOpen(true);
-  }
 
   function openEdit(action) {
     setEditing(action);
@@ -72,6 +79,11 @@ export default function ActionsPage() {
     setFormOpen(true);
   }
 
+  function closeForm() {
+    setFormOpen(false);
+    if (returnToAdmin && !editing) navigate('/app/admin/publicaciones');
+  }
+
   async function submit(event) {
     event.preventDefault();
     setSaving(true);
@@ -84,6 +96,10 @@ export default function ActionsPage() {
       if (editing) await responsibleActionsApi.update(editing.id, payload);
       else await responsibleActionsApi.create(payload);
       await loadData();
+      if (returnToAdmin && !editing) {
+        navigate('/app/admin/publicaciones');
+        return;
+      }
       setTab('mine');
       setFormOpen(false);
     } catch (apiError) {
@@ -156,7 +172,7 @@ export default function ActionsPage() {
         ))}
       </div>
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? 'Editar acción responsable' : 'Nueva acción responsable'} description={session?.user?.role === 'admin' ? 'Como administrador, esta publicación aparecerá inmediatamente y no genera puntos.' : 'Los puntos se entregan únicamente cuando el administrador aprueba la publicación.'} size="lg">
+      <Modal open={formOpen} onClose={closeForm} title={editing ? 'Editar acción responsable' : 'Nueva acción responsable'} description={session?.user?.role === 'admin' ? 'Como administrador, esta publicación aparecerá inmediatamente y no genera puntos.' : 'Los puntos se entregan únicamente cuando el administrador aprueba la publicación.'} size="lg">
         <form className="modal-form-grid" onSubmit={submit}>
           <label className="field field-full"><span>Título</span><input className="input" required minLength={4} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
           <label className="field"><span>Categoría</span><select className="select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option>Bienestar animal</option><option>Medio ambiente</option><option>Ayuda comunitaria</option><option>Adopción responsable</option><option>Educación</option></select></label>
@@ -164,7 +180,7 @@ export default function ActionsPage() {
           <label className="field field-full"><span>Ubicación</span><input className="input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label>
           <label className="field field-full"><span>Descripción</span><textarea className="textarea" required minLength={10} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
           <label className="field field-full"><span>Evidencia fotográfica</span><input className="input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} /></label>
-          <div className="modal-actions field-full"><button className="button button-secondary" type="button" onClick={() => setFormOpen(false)}>Cancelar</button><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando...' : editing ? 'Guardar cambios' : session?.user?.role === 'admin' ? 'Publicar ahora' : 'Enviar a revisión'}</button></div>
+          <div className="modal-actions field-full"><button className="button button-secondary" type="button" onClick={closeForm}>Cancelar</button><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando...' : editing ? 'Guardar cambios' : session?.user?.role === 'admin' ? 'Publicar ahora' : 'Enviar a revisión'}</button></div>
         </form>
       </Modal>
 

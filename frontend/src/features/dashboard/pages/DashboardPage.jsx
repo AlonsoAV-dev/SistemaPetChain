@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bookmark, CalendarDays, Heart, PawPrint, Search } from 'lucide-react';
+import { ArrowRight, Bookmark, CalendarDays, Heart, PawPrint, PlusCircle, Search, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authApi, dashboardApi } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
@@ -10,6 +10,27 @@ const activityIcons = {
   bookmark: Bookmark,
   calendar: CalendarDays,
 };
+
+const quickActions = [
+  {
+    title: 'Ver adopciones',
+    description: 'Conoce mascotas listas para una familia responsable.',
+    icon: Heart,
+    to: '/app/adopciones',
+  },
+  {
+    title: 'Reportar mascota perdida',
+    description: 'Publica datos, fotos y ubicación para activar la ayuda.',
+    icon: Search,
+    to: '/app/mascotas-perdidas',
+  },
+  {
+    title: 'Publicar acción responsable',
+    description: 'Comparte rescates, campañas o ayuda comunitaria.',
+    icon: Trophy,
+    to: '/app/acciones',
+  },
+];
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -69,8 +90,28 @@ export default function DashboardPage() {
             {dashboard.user?.name ? `Bienvenida, ${dashboard.user.name}` : 'Bienvenida'}{' '}
             <PawPrint size={28} aria-hidden="true" />
           </h1>
-          <p>Gracias por ser parte de la comunidad PetChain.</p>
+          <p>Ayuda a encontrar, adoptar y cuidar mascotas desde un solo lugar.</p>
         </div>
+        <button className="button button-primary" type="button" onClick={() => navigate('/app/acciones')}>
+          <PlusCircle size={18} /> Nueva acción
+        </button>
+      </section>
+
+      <section className="quick-actions-grid" aria-label="Acciones principales">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+
+          return (
+            <button className="quick-action-card" key={action.to} type="button" onClick={() => navigate(action.to)}>
+              <span className="quick-action-icon"><Icon size={22} aria-hidden="true" /></span>
+              <span>
+                <strong>{action.title}</strong>
+                <small>{action.description}</small>
+              </span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </button>
+          );
+        })}
       </section>
 
       <section className="stats-grid">
