@@ -1,6 +1,6 @@
 import { ArrowLeft, Camera, Edit3, MapPin, Phone } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { interactionsApi, lostPetsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -31,9 +31,11 @@ const emptyEditForm = {
   status: 'active',
 };
 
-export default function LostPetDetailPage() {
+export default function LostPetDetailPage({ publicView = false }) {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const session = getStoredSession();
   const [pet, setPet] = useState(null);
   const [reports, setReports] = useState([]);
@@ -139,7 +141,18 @@ export default function LostPetDetailPage() {
   const fromAdmin = searchParams.get('from');
   const backLink = fromAdmin?.startsWith('admin-')
     ? { to: fromAdmin === 'admin-moderation' ? '/app/admin' : '/app/admin/publicaciones', label: 'Volver a administración' }
-    : { to: '/app/mascotas-perdidas', label: 'Volver a mascotas perdidas' };
+    : publicView
+      ? { to: '/login', label: 'Ir a PetChain' }
+      : { to: '/app/mascotas-perdidas', label: 'Volver a mascotas perdidas' };
+
+  function requireLogin(action) {
+    if (session?.user) {
+      action();
+      return;
+    }
+
+    navigate('/login', { state: { from: `${location.pathname}${location.search}` } });
+  }
 
   return (
     <section className="detail-page">
@@ -174,8 +187,8 @@ export default function LostPetDetailPage() {
             </button>
           )}
           {!isOwner && active && (
-            <button className="button button-primary detail-primary-action" type="button" onClick={() => setModalOpen(true)}>
-              <MapPin size={18} /> La vi o la encontré
+            <button className="button button-primary detail-primary-action" type="button" onClick={() => requireLogin(() => setModalOpen(true))}>
+              <MapPin size={18} /> {session?.user ? 'La vi o la encontré' : 'Inicia sesión para reportar'}
             </button>
           )}
         </article>

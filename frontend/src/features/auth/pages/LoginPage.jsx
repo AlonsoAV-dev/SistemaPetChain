@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api/vetchainApi.js';
 import BrandMark from '../../../shared/components/BrandMark.jsx';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/app';
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
     email: '',
@@ -26,7 +28,7 @@ export default function LoginPage() {
 
     try {
       await authApi.login(credentials);
-      navigate('/app');
+      navigate(redirectTo, { replace: true });
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -113,7 +115,7 @@ export default function LoginPage() {
 
 
         <p className="signup-copy">
-          No tienes una cuenta? <Link to="/registro">Registrate</Link>
+          No tienes una cuenta? <Link to="/registro" state={{ from: redirectTo }}>Registrate</Link>
         </p>
       </div>
     </section>

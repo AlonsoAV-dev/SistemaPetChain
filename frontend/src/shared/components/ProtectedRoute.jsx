@@ -6,7 +6,13 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   const session = getStoredSession();
 
   if (!session?.token || !session?.user) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    const publicPath = location.pathname.match(/^\/app\/(adopciones|mascotas-perdidas|acciones)\/([^/]+)$/);
+
+    if (publicPath) {
+      return <Navigate to={`/${publicPath[1]}/${publicPath[2]}${location.search}`} replace />;
+    }
+
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
 
   if (adminOnly && session.user.role !== 'admin') {

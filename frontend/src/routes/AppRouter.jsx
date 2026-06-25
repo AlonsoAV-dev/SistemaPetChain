@@ -18,6 +18,7 @@ import LostPetDetailPage from '../features/lostPets/pages/LostPetDetailPage.jsx'
 import ProfilePage from '../features/profile/pages/ProfilePage.jsx';
 import AuthLayout from '../layouts/AuthLayout.jsx';
 import DashboardLayout from '../layouts/DashboardLayout.jsx';
+import PublicLayout from '../layouts/PublicLayout.jsx';
 import { getStoredSession } from '../shared/api/httpClient.js';
 import ProtectedRoute from '../shared/components/ProtectedRoute.jsx';
 
@@ -33,6 +34,11 @@ export default function AppRouter() {
       <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
       <Route path="/registro" element={<AuthLayout><RegisterPage /></AuthLayout>} />
       <Route path="/register" element={<Navigate to="/registro" replace />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/adopciones/:id" element={<AdoptionDetailPage publicView />} />
+        <Route path="/mascotas-perdidas/:id" element={<LostPetDetailPage publicView />} />
+        <Route path="/acciones/:id" element={<ActionDetailPage publicView />} />
+      </Route>
       <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<AppIndexRoute />} />
         <Route path="articulos" element={<ArticlesPage />} />

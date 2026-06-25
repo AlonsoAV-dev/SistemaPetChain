@@ -6,7 +6,7 @@ import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
 import PhotoGallery from '../../../shared/components/PhotoGallery.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
 
-export default function ActionDetailPage() {
+export default function ActionDetailPage({ publicView = false }) {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [action, setAction] = useState(null);
@@ -21,7 +21,9 @@ export default function ActionDetailPage() {
   const fromAdmin = searchParams.get('from');
   const backLink = fromAdmin?.startsWith('admin-')
     ? { to: fromAdmin === 'admin-moderation' ? '/app/admin' : '/app/admin/publicaciones', label: 'Volver a administración' }
-    : { to: '/app/acciones', label: 'Volver a acciones responsables' };
+    : publicView
+      ? { to: '/login', label: 'Ir a PetChain' }
+      : { to: '/app/acciones', label: 'Volver a acciones responsables' };
 
   return (
     <section className="detail-page">

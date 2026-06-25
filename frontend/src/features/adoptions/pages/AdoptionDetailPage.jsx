@@ -1,6 +1,6 @@
 import { ArrowLeft, Check, Edit3, Heart, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { adoptionsApi, interactionsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
@@ -33,9 +33,11 @@ const emptyEditForm = {
   status: 'available',
 };
 
-export default function AdoptionDetailPage() {
+export default function AdoptionDetailPage({ publicView = false }) {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const session = getStoredSession();
   const [pet, setPet] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -140,7 +142,18 @@ export default function AdoptionDetailPage() {
   const fromAdmin = searchParams.get('from');
   const backLink = fromAdmin?.startsWith('admin-')
     ? { to: fromAdmin === 'admin-moderation' ? '/app/admin' : '/app/admin/publicaciones', label: 'Volver a administración' }
-    : { to: '/app/adopciones', label: 'Volver a adopciones' };
+    : publicView
+      ? { to: '/login', label: 'Ir a PetChain' }
+      : { to: '/app/adopciones', label: 'Volver a adopciones' };
+
+  function requireLogin(action) {
+    if (session?.user) {
+      action();
+      return;
+    }
+
+    navigate('/login', { state: { from: `${location.pathname}${location.search}` } });
+  }
 
   return (
     <section className="detail-page">
@@ -176,8 +189,8 @@ export default function AdoptionDetailPage() {
             </button>
           )}
           {!isOwner && available && (
-            <button className="button button-primary detail-primary-action" type="button" onClick={() => setModalOpen(true)}>
-              <Heart size={18} /> Quiero adoptar
+            <button className="button button-primary detail-primary-action" type="button" onClick={() => requireLogin(() => setModalOpen(true))}>
+              <Heart size={18} /> {session?.user ? 'Quiero adoptar' : 'Inicia sesión para adoptar'}
             </button>
           )}
         </article>
