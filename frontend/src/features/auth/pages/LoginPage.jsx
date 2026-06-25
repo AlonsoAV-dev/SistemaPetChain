@@ -4,12 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api/vetchainApi.js';
 import BrandMark from '../../../shared/components/BrandMark.jsx';
 
-const socialProviders = [
-  { label: 'Facebook', shortLabel: 'f' },
-  { label: 'Google', shortLabel: 'G' },
-  { label: 'LinkedIn', shortLabel: 'in' },
-];
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);

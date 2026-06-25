@@ -12,10 +12,10 @@ import ArticlesPage from '../features/content/pages/ArticlesPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
 import EventsPage from '../features/events/pages/EventsPage.jsx';
 import EventDetailPage from '../features/events/pages/EventDetailPage.jsx';
+import FoundationsPage from '../features/foundations/pages/FoundationsPage.jsx';
 import LostPetsPage from '../features/lostPets/pages/LostPetsPage.jsx';
 import LostPetDetailPage from '../features/lostPets/pages/LostPetDetailPage.jsx';
 import ProfilePage from '../features/profile/pages/ProfilePage.jsx';
-import SettingsPage from '../features/settings/pages/SettingsPage.jsx';
 import AuthLayout from '../layouts/AuthLayout.jsx';
 import DashboardLayout from '../layouts/DashboardLayout.jsx';
 import ProtectedRoute from '../shared/components/ProtectedRoute.jsx';
@@ -42,8 +42,9 @@ export default function AppRouter() {
         <Route path="comunidad" element={<CommunityPage />} />
         <Route path="eventos" element={<EventsPage />} />
         <Route path="eventos/:id" element={<EventDetailPage />} />
+        <Route path="fundaciones" element={<FoundationsPage />} />
         <Route path="perfil" element={<ProfilePage />} />
-        <Route path="configuracion" element={<SettingsPage />} />
+        <Route path="configuracion" element={<Navigate to="/app/perfil" replace />} />
         <Route path="admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/app" replace />} />

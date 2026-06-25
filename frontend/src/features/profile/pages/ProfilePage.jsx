@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { LockKeyhole, Pencil, Save, X } from 'lucide-react';
 import {
   adoptionsApi,
   authApi,
@@ -17,11 +18,12 @@ const emptyPasswordForm = {
 };
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(() => getStoredSession()?.user ?? null);
+  const storedUser = getStoredSession()?.user;
+  const [profile, setProfile] = useState(() => storedUser ?? null);
   const [profileForm, setProfileForm] = useState(() => ({
-    name: getStoredSession()?.user?.name ?? '',
-    email: getStoredSession()?.user?.email ?? '',
-    avatarUrl: getStoredSession()?.user?.avatarUrl ?? '',
+    name: storedUser?.name ?? '',
+    email: storedUser?.email ?? '',
+    avatarUrl: storedUser?.avatarUrl ?? '',
   }));
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [summary, setSummary] = useState({
@@ -34,6 +36,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
@@ -93,6 +96,17 @@ export default function ProfilePage() {
     };
   }, []);
 
+  function resetProfileForm() {
+    setProfileForm({
+      name: profile?.name ?? '',
+      email: profile?.email ?? '',
+      avatarUrl: profile?.avatarUrl ?? '',
+    });
+    setAvatarFile(null);
+    setProfileMessage('');
+    setError('');
+  }
+
   function handleProfileInput(event) {
     setProfileForm({ ...profileForm, [event.target.name]: event.target.value });
   }
@@ -108,6 +122,8 @@ export default function ProfilePage() {
 
   async function handleProfileSubmit(event) {
     event.preventDefault();
+    if (!isEditingProfile) return;
+
     setError('');
     setProfileMessage('');
     setIsSavingProfile(true);
@@ -129,6 +145,7 @@ export default function ProfilePage() {
         avatarUrl: updatedProfile.avatarUrl ?? '',
       });
       setAvatarFile(null);
+      setIsEditingProfile(false);
       setProfileMessage('Perfil actualizado correctamente.');
     } catch (apiError) {
       setError(apiError.message);
@@ -164,153 +181,158 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
-      <section className="page-header">
+    <section className="profile-page">
+      <header className="page-header profile-page-header">
         <div className="page-title">
           <h1>{profile?.name ? `Perfil de ${profile.name}` : 'Perfil'}</h1>
-          <p>Actualiza tus datos personales, avatar y contrasena.</p>
+          <p>Gestiona tus datos personales, seguridad y actividad comunitaria.</p>
         </div>
-      </section>
+      </header>
 
-      <section className="panel">
-        <div className="panel-title">
-          <h2>Informacion personal</h2>
-          <p>Estos datos se muestran dentro de la comunidad y se guardan en tu cuenta.</p>
-        </div>
+      {error && <p className="form-error">{error}</p>}
 
-        <div className="profile-header">
-          <span className="avatar avatar-lg" aria-hidden="true">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} loading="lazy" />
-            ) : (
-              initial
-            )}
-          </span>
-          <div>
-            <strong>{displayName}</strong>
-            <span>{profile?.email ?? '-'}</span>
+      <div className="profile-layout">
+        <section className="panel profile-card">
+          <div className="profile-summary">
+            <span className="avatar avatar-lg" aria-hidden="true">
+              {avatarUrl ? <img src={avatarUrl} alt={displayName} loading="lazy" /> : initial}
+            </span>
+            <div>
+              <strong>{displayName}</strong>
+              <span>{profile?.email ?? '-'}</span>
+              <small>{profile?.role ?? 'user'} · Desde {joinedDate}</small>
+            </div>
           </div>
-        </div>
 
-        {error && <p className="form-error">{error}</p>}
-        {profileMessage && <p className="form-success">{profileMessage}</p>}
+          {profileMessage && <p className="form-success">{profileMessage}</p>}
 
-        <form className="form-stack" onSubmit={handleProfileSubmit}>
-          <label className="field">
-            <span>Nombre</span>
-            <input
-              className="input"
-              name="name"
-              required
-              minLength={2}
-              value={profileForm.name}
-              onChange={handleProfileInput}
-            />
-          </label>
-          <label className="field">
-            <span>Correo electronico</span>
-            <input
-              className="input"
-              name="email"
-              type="email"
-              required
-              value={profileForm.email}
-              onChange={handleProfileInput}
-            />
-          </label>
-          <label className="field">
-            <span>Rol</span>
-            <input className="input" value={profile?.role ?? 'user'} readOnly />
-          </label>
-          <label className="field">
-            <span>Miembro desde</span>
-            <input className="input" value={joinedDate} readOnly />
-          </label>
-          <label className="field">
-            <span>Subir avatar</span>
-            <input className="input" type="file" accept="image/*" onChange={handleAvatarFileChange} />
-          </label>
-          <label className="field">
-            <span>URL de avatar</span>
-            <input
-              className="input"
-              name="avatarUrl"
-              value={profileForm.avatarUrl}
-              onChange={handleProfileInput}
-              placeholder="https://"
-            />
-          </label>
-          <button className="button button-primary" type="submit" disabled={isSavingProfile}>
-            {isSavingProfile ? 'Guardando...' : 'Guardar perfil'}
-          </button>
-        </form>
-      </section>
+          <form className="profile-edit-form" onSubmit={handleProfileSubmit}>
+            <div className="profile-panel-title">
+              <div>
+                <h2>Informacion personal</h2>
+                <p>{isEditingProfile ? 'Edita y guarda tus cambios.' : 'Activa la edicion para modificar tus datos.'}</p>
+              </div>
+              {!isEditingProfile ? (
+                <button className="button button-secondary" type="button" onClick={() => setIsEditingProfile(true)}>
+                  <Pencil size={16} /> Editar perfil
+                </button>
+              ) : (
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={() => {
+                    resetProfileForm();
+                    setIsEditingProfile(false);
+                  }}
+                >
+                  <X size={16} /> Cancelar
+                </button>
+              )}
+            </div>
 
-      <section className="panel">
-        <div className="panel-title">
-          <h2>Cambiar contrasena</h2>
-          <p>Por seguridad debes ingresar tu contrasena actual.</p>
-        </div>
+            <div className="profile-form-grid">
+              <label className="field">
+                <span>Nombre</span>
+                <input
+                  className="input"
+                  name="name"
+                  required
+                  minLength={2}
+                  disabled={!isEditingProfile}
+                  value={profileForm.name}
+                  onChange={handleProfileInput}
+                />
+              </label>
+              <label className="field">
+                <span>Correo electronico</span>
+                <input
+                  className="input"
+                  name="email"
+                  type="email"
+                  required
+                  disabled={!isEditingProfile}
+                  value={profileForm.email}
+                  onChange={handleProfileInput}
+                />
+              </label>
+              <label className="field">
+                <span>Rol</span>
+                <input className="input" value={profile?.role ?? 'user'} disabled />
+              </label>
+              <label className="field">
+                <span>Miembro desde</span>
+                <input className="input" value={joinedDate} disabled />
+              </label>
+              <label className="field">
+                <span>Subir avatar</span>
+                <input className="input" type="file" accept="image/*" disabled={!isEditingProfile} onChange={handleAvatarFileChange} />
+              </label>
+              <label className="field">
+                <span>URL de avatar</span>
+                <input
+                  className="input"
+                  name="avatarUrl"
+                  disabled={!isEditingProfile}
+                  value={profileForm.avatarUrl}
+                  onChange={handleProfileInput}
+                  placeholder="https://"
+                />
+              </label>
+            </div>
 
-        {passwordMessage && <p className="form-success">{passwordMessage}</p>}
+            {isEditingProfile && (
+              <button className="button button-primary profile-save-button" type="submit" disabled={isSavingProfile}>
+                <Save size={16} /> {isSavingProfile ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            )}
+          </form>
+        </section>
 
-        <form className="form-stack" onSubmit={handlePasswordSubmit}>
-          <label className="field">
-            <span>Contrasena actual</span>
-            <input
-              className="input"
-              name="currentPassword"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={passwordForm.currentPassword}
-              onChange={handlePasswordInput}
-            />
-          </label>
-          <label className="field">
-            <span>Nueva contrasena</span>
-            <input
-              className="input"
-              name="newPassword"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={passwordForm.newPassword}
-              onChange={handlePasswordInput}
-            />
-          </label>
-          <label className="field">
-            <span>Confirmar nueva contrasena</span>
-            <input
-              className="input"
-              name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={passwordForm.confirmPassword}
-              onChange={handlePasswordInput}
-            />
-          </label>
-          <button className="button button-primary" type="submit" disabled={isChangingPassword}>
-            {isChangingPassword ? 'Actualizando...' : 'Cambiar contrasena'}
-          </button>
-        </form>
-      </section>
+        <aside className="profile-side-column">
+          <section className="panel password-card">
+            <div className="profile-panel-title compact">
+              <div>
+                <h2>Cambiar contrasena</h2>
+                <p>Usa tu contrasena actual para validar el cambio.</p>
+              </div>
+              <LockKeyhole size={20} aria-hidden="true" />
+            </div>
+            {passwordMessage && <p className="form-success">{passwordMessage}</p>}
+            <form className="compact-form" onSubmit={handlePasswordSubmit}>
+              <label className="field">
+                <span>Actual</span>
+                <input className="input" name="currentPassword" type="password" autoComplete="current-password" required value={passwordForm.currentPassword} onChange={handlePasswordInput} />
+              </label>
+              <label className="field">
+                <span>Nueva</span>
+                <input className="input" name="newPassword" type="password" autoComplete="new-password" required minLength={8} value={passwordForm.newPassword} onChange={handlePasswordInput} />
+              </label>
+              <label className="field">
+                <span>Confirmar</span>
+                <input className="input" name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} value={passwordForm.confirmPassword} onChange={handlePasswordInput} />
+              </label>
+              <button className="button button-primary" type="submit" disabled={isChangingPassword}>
+                {isChangingPassword ? 'Actualizando...' : 'Cambiar contrasena'}
+              </button>
+            </form>
+          </section>
 
-      <section className="panel">
-        <div className="panel-title">
-          <h2>Resumen comunitario</h2>
-          <p>Seguimiento rapido de tu participacion.</p>
-        </div>
-        <div className="stats-grid" style={{ marginTop: 24 }}>
-          <StatCard label="Acciones registradas" value={summary.actions} />
-          <StatCard label="Reportes activos" value={summary.lostPets} />
-          <StatCard label="Adopciones" value={summary.adoptions} />
-          <StatCard label="Eventos" value={summary.events} />
-        </div>
-      </section>
-    </>
+          <section className="panel mini-summary-card">
+            <div className="profile-panel-title compact">
+              <div>
+                <h2>Resumen</h2>
+                <p>Tu actividad comunitaria.</p>
+              </div>
+            </div>
+            <div className="mini-stats-grid">
+              <StatCard label="Acciones" value={summary.actions} />
+              <StatCard label="Perdidas" value={summary.lostPets} />
+              <StatCard label="Adopciones" value={summary.adoptions} />
+              <StatCard label="Eventos" value={summary.events} />
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>
   );
 }

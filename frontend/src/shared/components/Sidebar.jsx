@@ -4,10 +4,10 @@ import {
   BookOpen,
   CalendarDays,
   Heart,
+  HeartHandshake,
   Home,
   LogOut,
   Search,
-  Settings,
   ShieldCheck,
   Trophy,
   User,
@@ -24,8 +24,8 @@ const navItems = [
   { to: '/app/acciones', label: 'Acciones responsables', icon: Trophy },
   { to: '/app/comunidad', label: 'Comunidad', icon: Users },
   { to: '/app/eventos', label: 'Eventos', icon: CalendarDays },
+  { to: '/app/fundaciones', label: 'Fundaciones', icon: HeartHandshake },
   { to: '/app/perfil', label: 'Perfil', icon: User },
-  { to: '/app/configuracion', label: 'Configuración', icon: Settings },
 ];
 
 export default function Sidebar({ isCollapsed, onNavigate }) {
