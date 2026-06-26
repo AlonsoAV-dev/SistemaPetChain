@@ -182,7 +182,8 @@ CREATE TABLE public.articles (
   description text NOT NULL,
   content text NOT NULL,
   image_url text,
-  published boolean NOT NULL DEFAULT false,
+  sources jsonb NOT NULL DEFAULT '[]'::jsonb,
+  published boolean NOT NULL DEFAULT true,
   published_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

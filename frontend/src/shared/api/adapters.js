@@ -57,8 +57,11 @@ export function adaptArticle(article) {
     description: article.description,
     content: article.content,
     image: article.image ?? article.imageUrl,
+    sources: article.sources ?? [],
+    published: article.published,
     publishedAt: article.publishedAt,
     createdAt: article.createdAt,
+    updatedAt: article.updatedAt,
   };
 }
 

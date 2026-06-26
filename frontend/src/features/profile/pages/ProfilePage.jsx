@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LockKeyhole, Pencil, Save, X } from 'lucide-react';
-import {
-  adoptionsApi,
-  authApi,
-  eventsApi,
-  lostPetsApi,
-  mediaApi,
-  responsibleActionsApi,
-} from '../../../shared/api/vetchainApi.js';
+import { authApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
-import StatCard from '../../../shared/components/StatCard.jsx';
 
 const emptyPasswordForm = {
   currentPassword: '',
@@ -26,12 +18,6 @@ export default function ProfilePage() {
     avatarUrl: storedUser?.avatarUrl ?? '',
   }));
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
-  const [summary, setSummary] = useState({
-    actions: 0,
-    lostPets: 0,
-    adoptions: 0,
-    events: 0,
-  });
   const [avatarFile, setAvatarFile] = useState(null);
   const [error, setError] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
@@ -55,40 +41,16 @@ export default function ProfilePage() {
     let isMounted = true;
     setError('');
 
-    Promise.allSettled([
-      authApi.me(),
-      responsibleActionsApi.list(),
-      lostPetsApi.list(),
-      adoptionsApi.list(),
-      eventsApi.list(),
-    ]).then((results) => {
+    authApi.me().then((profileResult) => {
       if (!isMounted) return;
-
-      const [
-        profileResult,
-        actionsResult,
-        lostPetsResult,
-        adoptionsResult,
-        eventsResult,
-      ] = results;
-
-      if (profileResult.status === 'fulfilled') {
-        setProfile(profileResult.value);
-        setProfileForm({
-          name: profileResult.value.name ?? '',
-          email: profileResult.value.email ?? '',
-          avatarUrl: profileResult.value.avatarUrl ?? '',
-        });
-      } else {
-        setError(profileResult.reason?.message ?? 'No se pudo cargar el perfil.');
-      }
-
-      setSummary({
-        actions: actionsResult.status === 'fulfilled' ? actionsResult.value.length : 0,
-        lostPets: lostPetsResult.status === 'fulfilled' ? lostPetsResult.value.length : 0,
-        adoptions: adoptionsResult.status === 'fulfilled' ? adoptionsResult.value.length : 0,
-        events: eventsResult.status === 'fulfilled' ? eventsResult.value.length : 0,
+      setProfile(profileResult);
+      setProfileForm({
+        name: profileResult.name ?? '',
+        email: profileResult.email ?? '',
+        avatarUrl: profileResult.avatarUrl ?? '',
       });
+    }).catch((apiError) => {
+      if (isMounted) setError(apiError.message ?? 'No se pudo cargar el perfil.');
     });
 
     return () => {
@@ -185,7 +147,7 @@ export default function ProfilePage() {
       <header className="page-header profile-page-header">
         <div className="page-title">
           <h1>{profile?.name ? `Perfil de ${profile.name}` : 'Perfil'}</h1>
-          <p>Gestiona tus datos personales, seguridad y actividad comunitaria.</p>
+          <p>Gestiona tus datos personales y la seguridad de tu cuenta.</p>
         </div>
       </header>
 
@@ -315,21 +277,6 @@ export default function ProfilePage() {
                 {isChangingPassword ? 'Actualizando...' : 'Cambiar contrasena'}
               </button>
             </form>
-          </section>
-
-          <section className="panel mini-summary-card">
-            <div className="profile-panel-title compact">
-              <div>
-                <h2>Resumen</h2>
-                <p>Tu actividad comunitaria.</p>
-              </div>
-            </div>
-            <div className="mini-stats-grid">
-              <StatCard label="Acciones" value={summary.actions} />
-              <StatCard label="Perdidas" value={summary.lostPets} />
-              <StatCard label="Adopciones" value={summary.adoptions} />
-              <StatCard label="Eventos" value={summary.events} />
-            </div>
           </section>
         </aside>
       </div>

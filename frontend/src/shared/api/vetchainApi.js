@@ -230,12 +230,30 @@ export const eventsApi = {
 };
 
 export const articlesApi = {
-  async list(category = '') {
-    const search = category ? `?category=${encodeURIComponent(category)}` : '';
+  async list(category = '', options = {}) {
+    const params = new URLSearchParams();
+    if (category) params.set('category', category);
+    if (options.all) params.set('all', 'true');
+    const search = params.toString() ? `?${params.toString()}` : '';
     return (await apiRequest(`/articles${search}`)).map(adaptArticle);
   },
   async get(id) {
     return adaptArticle(await apiRequest(`/articles/${id}`));
+  },
+  async create(payload) {
+    return adaptArticle(await apiRequest('/articles', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }));
+  },
+  async update(id, payload) {
+    return adaptArticle(await apiRequest(`/articles/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }));
+  },
+  async remove(id) {
+    return apiRequest(`/articles/${id}`, { method: 'DELETE' });
   },
 };
 
