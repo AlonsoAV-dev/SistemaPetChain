@@ -2,6 +2,7 @@ import { ArrowLeft, CalendarDays, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { articlesApi } from '../../../shared/api/vetchainApi.js';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
@@ -12,7 +13,7 @@ export default function ArticleDetailPage() {
     articlesApi.get(id).then(setArticle).catch((apiError) => setError(apiError.message));
   }, [id]);
 
-  if (!article) return <div className="empty-state">{error || 'Cargando artículo...'}</div>;
+  if (!article) return error ? <div className="empty-state">{error}</div> : <LoadingState label="Cargando artículo..." />;
 
   const publishedDate = article.publishedAt ?? article.createdAt;
   const paragraphs = article.content.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean);

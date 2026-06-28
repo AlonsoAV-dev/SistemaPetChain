@@ -6,6 +6,7 @@ import { adoptionsApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
 import Modal from '../../../shared/components/Modal.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 const fallbackImage = 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=900&q=80';
 const emptyForm = {
@@ -32,6 +33,7 @@ export default function AdoptionsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const openCreate = useCallback(() => {
     setEditing(null);
@@ -50,7 +52,7 @@ export default function AdoptionsPage() {
   }, [canPublish]);
 
   useEffect(() => {
-    loadData().catch((apiError) => setError(apiError.message));
+    loadData().catch((apiError) => setError(apiError.message)).finally(() => setLoading(false));
   }, [loadData]);
 
   useEffect(() => {
@@ -129,6 +131,8 @@ export default function AdoptionsPage() {
     event.stopPropagation();
     handler();
   };
+
+  if (loading) return <LoadingState label="Cargando adopciones..." />;
 
   return (
     <section className="module-section">

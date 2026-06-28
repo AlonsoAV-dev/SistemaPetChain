@@ -48,3 +48,15 @@ export async function getSummary(_req, res) {
   res.json({ data: await adminService.getSummary() });
 }
 
+export async function listRewardPeriods(_req, res) {
+  res.json({ data: await adminService.listRewardPeriods() });
+}
+
+export async function updateRewardPeriod(req, res) {
+  res.json({ data: await adminService.editRewardPeriod(req.params.id, req.body) });
+}
+
+export async function drawRewardPeriod(req, res) {
+  res.json({ data: await adminService.runRewardDraw(req.params.id, req.user.id) });
+}
+

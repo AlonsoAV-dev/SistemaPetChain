@@ -5,6 +5,7 @@ import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { articlesApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import Modal from '../../../shared/components/Modal.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 const tabs = [
   {
@@ -49,6 +50,7 @@ export default function ArticlesPage({ initialCategory = 'Educación' }) {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setActiveCategory(initialCategory);
@@ -64,7 +66,8 @@ export default function ArticlesPage({ initialCategory = 'Educación' }) {
   }, [activeCategory, isAdmin]);
 
   useEffect(() => {
-    loadArticles();
+    setLoading(true);
+    loadArticles().finally(() => setLoading(false));
   }, [loadArticles]);
 
   const activeTab = tabs.find((tab) => tab.key === activeCategory) ?? tabs[0];
@@ -157,6 +160,8 @@ export default function ArticlesPage({ initialCategory = 'Educación' }) {
       setError(apiError.message);
     }
   }
+
+  if (loading) return <LoadingState label="Cargando artículos..." />;
 
   return (
     <section className="module-section">

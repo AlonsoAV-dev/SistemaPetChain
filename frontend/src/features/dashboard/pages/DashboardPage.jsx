@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi, dashboardApi } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 const activityIcons = {
   heart: Heart,
@@ -34,6 +35,7 @@ const quickActions = [
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState({
     user: getStoredSession()?.user ?? null,
     summary: {
@@ -73,7 +75,7 @@ export default function DashboardPage() {
       } else {
         console.warn('No se pudo cargar el perfil del usuario:', profileResult.reason?.message);
       }
-    });
+    }).finally(() => isMounted && setLoading(false));
 
     return () => {
       isMounted = false;
@@ -81,6 +83,8 @@ export default function DashboardPage() {
   }, []);
 
   const goToArticle = (article) => navigate(`/app/articulos/${article.id}`);
+
+  if (loading) return <LoadingState label="Cargando tu inicio..." />;
 
   return (
     <>

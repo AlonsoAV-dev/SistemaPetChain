@@ -2,16 +2,21 @@ import { Heart, PawPrint, Search, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { adoptionsApi, lostPetsApi, responsibleActionsApi } from '../../../shared/api/vetchainApi.js';
 import StatCard from '../../../shared/components/StatCard.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 export default function CommunityPage() {
   const [data, setData] = useState({ lost: [], adoptions: [], actions: [] });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([lostPetsApi.list(), adoptionsApi.list(), responsibleActionsApi.list()])
       .then(([lost, adoptions, actions]) => setData({ lost, adoptions, actions }))
-      .catch((apiError) => setError(apiError.message));
+      .catch((apiError) => setError(apiError.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) return <LoadingState label="Cargando comunidad..." />;
 
   return (
     <section className="module-section">

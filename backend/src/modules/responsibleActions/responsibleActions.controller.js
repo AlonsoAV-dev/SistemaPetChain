@@ -1,6 +1,7 @@
 import * as actionsService from './responsibleActions.service.js';
 import { httpError } from '../../utils/httpError.js';
 import { requireFields } from '../../utils/request.js';
+import { getRewardsOverview } from './rewards.service.js';
 
 export async function listActions(req, res) {
   const data = await actionsService.getActions(req.query);
@@ -42,5 +43,9 @@ export async function likeAction(req, res) {
 export async function deleteAction(req, res) {
   await actionsService.deleteAction(req.params.id, req.user);
   res.status(204).end();
+}
+
+export async function getRewards(req, res) {
+  res.json({ data: await getRewardsOverview(req.user?.id ?? null) });
 }
 

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clearSession, getStoredSession } from '../api/httpClient.js';
 import { interactionsApi } from '../api/vetchainApi.js';
+import LoadingState from './LoadingState.jsx';
 
 export default function Topbar({ onToggleSidebar, isSidebarOpen, user }) {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function Topbar({ onToggleSidebar, isSidebarOpen, user }) {
   const avatarUrl = resolvedUser?.avatarUrl ?? '';
   const initial = displayName.charAt(0).toUpperCase();
   const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -18,7 +20,8 @@ export default function Topbar({ onToggleSidebar, isSidebarOpen, user }) {
   useEffect(() => {
     interactionsApi.notifications()
       .then(setNotifications)
-      .catch(() => setNotifications([]));
+      .catch(() => setNotifications([]))
+      .finally(() => setNotificationsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -81,7 +84,7 @@ export default function Topbar({ onToggleSidebar, isSidebarOpen, user }) {
           {notificationsOpen && (
             <div className="notification-panel">
               <div className="notification-panel-header"><strong>Notificaciones</strong><span>{unread} nuevas</span></div>
-              {notifications.length === 0 ? <p>No tienes notificaciones.</p> : notifications.slice(0, 10).map((notification) => (
+              {notificationsLoading ? <LoadingState compact label="Cargando notificaciones..." /> : notifications.length === 0 ? <p>No tienes notificaciones.</p> : notifications.slice(0, 10).map((notification) => (
                 <button className={`notification-item${notification.read ? '' : ' unread'}`} type="button" key={notification.id} onClick={() => openNotification(notification)}>
                   <strong>{notification.title}</strong>
                   <span>{notification.message}</span>

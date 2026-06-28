@@ -11,6 +11,7 @@ import {
 function detailPath(type, publicationId) {
   if (type === 'adoption') return `/app/adopciones/${publicationId}`;
   if (type === 'lost_pet') return `/app/mascotas-perdidas/${publicationId}`;
+  if (type === 'responsible_action') return `/app/acciones/${publicationId}`;
   return '/app';
 }
 

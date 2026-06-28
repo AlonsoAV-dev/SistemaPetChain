@@ -5,6 +5,7 @@ import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { eventsApi } from '../../../shared/api/vetchainApi.js';
 import LinkPreview from '../../../shared/components/LinkPreview.jsx';
 import Modal from '../../../shared/components/Modal.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 const emptyForm = {
   title: '',
@@ -25,13 +26,14 @@ export default function EventsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function loadEvents() {
     setEvents(await eventsApi.list());
   }
 
   useEffect(() => {
-    loadEvents().catch((apiError) => setError(apiError.message));
+    loadEvents().catch((apiError) => setError(apiError.message)).finally(() => setLoading(false));
   }, []);
 
   async function submit(event) {
@@ -58,6 +60,8 @@ export default function EventsPage() {
       setError(apiError.message);
     }
   }
+
+  if (loading) return <LoadingState label="Cargando eventos..." />;
 
   return (
     <section className="module-section">

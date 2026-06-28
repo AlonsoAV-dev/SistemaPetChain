@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarDays,
   FileText,
+  Gift,
   Heart,
   HeartHandshake,
   Home,
@@ -36,6 +37,7 @@ const adminNavItems = [
   { to: '/app/eventos', label: 'Eventos', icon: CalendarDays },
   { to: '/app/articulos', label: 'Artículos', icon: BookOpen },
   { to: '/app/admin/usuarios', label: 'Usuarios', icon: Users },
+  { to: '/app/admin/recompensas', label: 'Puntos y sorteos', icon: Gift },
   { to: '/app/fundaciones', label: 'Fundaciones', icon: HeartHandshake },
   { to: '/app/perfil', label: 'Perfil', icon: User },
 ];

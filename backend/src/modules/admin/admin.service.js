@@ -3,6 +3,11 @@ import { httpError } from '../../utils/httpError.js';
 import { mapPublicationStatus, mapUser } from '../../utils/mappers.js';
 import { hashPassword } from '../../utils/password.js';
 import { validateEmail, validatePassword, validateText } from '../../utils/validation.js';
+import {
+  drawRewardPeriod,
+  getAdminRewardPeriods,
+  updateRewardPeriod,
+} from '../responsibleActions/rewards.service.js';
 
 function mapModerationItem(row) {
   const typeLabels = {
@@ -20,15 +25,31 @@ function mapModerationItem(row) {
     type: row.type,
     typeLabel: typeLabels[row.type] ?? row.type,
     description: row.description,
+    ownerId: row.owner_id,
+    category: row.category,
+    evidenceUrl: row.evidence_url,
+    minPoints: row.min_points,
+    maxPoints: row.max_points,
+    monthlyLimit: row.monthly_reward_limit,
     createdAt: row.created_at,
   };
 }
 
 export async function getModerationItems() {
   const result = await query(
-    `SELECT *
-     FROM public.admin_moderation_queue
-     ORDER BY created_at ASC`,
+    `SELECT
+       p.id, p.type, p.title, p.description, p.created_at,
+       p.moderation_status, p.owner_id,
+       u.name AS owner_name, u.email AS owner_email,
+       rap.category, rap.evidence_url,
+       action_rule.min_points, action_rule.max_points, action_rule.monthly_reward_limit
+     FROM public.publications p
+     JOIN public.users u ON u.id = p.owner_id
+     LEFT JOIN public.responsible_action_publications rap ON rap.publication_id = p.id
+     LEFT JOIN public.responsible_action_point_rules action_rule
+       ON action_rule.category = rap.category AND action_rule.enabled = true
+     WHERE p.moderation_status = 'pending'
+     ORDER BY p.created_at ASC`,
   );
   return result.rows.map(mapModerationItem);
 }
@@ -48,10 +69,21 @@ export async function updateModerationItem(id, payload, adminId) {
   }
 
   const reason = payload.reason ? String(payload.reason).trim() : null;
+  const points = payload.points === undefined || payload.points === null || payload.points === ''
+    ? null
+    : Number(payload.points);
+  const pointReason = payload.pointReason ? String(payload.pointReason).trim() : null;
+
+  if (points !== null && !Number.isInteger(points)) {
+    throw httpError(400, 'Los puntos deben ser un numero entero.');
+  }
+
   const result = await query(
     `SELECT *
-     FROM public.review_publication($1, $2, $3::public.moderation_decision, $4)`,
-    [id, adminId, decision, reason],
+     FROM public.review_publication(
+       $1, $2, $3::public.moderation_decision, $4, $5::smallint, $6
+     )`,
+    [id, adminId, decision, reason, points, pointReason],
   );
   const row = result.rows[0];
 
@@ -260,4 +292,16 @@ export async function getSummary() {
        (SELECT count(*)::integer FROM public.comments) AS comments`,
   );
   return result.rows[0];
+}
+
+export async function listRewardPeriods() {
+  return getAdminRewardPeriods();
+}
+
+export async function editRewardPeriod(id, payload) {
+  return updateRewardPeriod(id, payload);
+}
+
+export async function runRewardDraw(id, adminId) {
+  return drawRewardPeriod(id, adminId);
 }

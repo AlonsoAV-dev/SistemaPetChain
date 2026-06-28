@@ -2,12 +2,15 @@ import {
   Check,
   Clock,
   ExternalLink,
+  Gift,
   Heart,
   Plus,
+  Pencil,
   Search,
   ShieldCheck,
   Trash2,
   Trophy,
+  Shuffle,
   UserPlus,
   UserRoundCheck,
   UserRoundX,
@@ -17,11 +20,13 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../../shared/api/vetchainApi.js';
+import { getStoredSession } from '../../../shared/api/httpClient.js';
 import Modal from '../../../shared/components/Modal.jsx';
 import StatCard from '../../../shared/components/StatCard.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
-const validSections = new Set(['moderation', 'publications', 'comments', 'users']);
+const validSections = new Set(['moderation', 'publications', 'comments', 'users', 'rewards']);
 
 const sectionMeta = {
   moderation: {
@@ -40,6 +45,10 @@ const sectionMeta = {
     title: 'Gestión de usuarios',
     description: 'Crea usuarios, revisa roles, actividad y fecha de registro.',
   },
+  rewards: {
+    title: 'Puntos y sorteos',
+    description: 'Configura el reto mensual, revisa los premios y realiza sorteos auditables.',
+  },
 };
 
 const adminRoutes = {
@@ -47,6 +56,7 @@ const adminRoutes = {
   publications: '/app/admin/publicaciones',
   comments: '/app/admin/comentarios',
   users: '/app/admin/usuarios',
+  rewards: '/app/admin/recompensas',
 };
 
 const typeLabels = {
@@ -108,38 +118,47 @@ function publicationPath(item, fromSection) {
 
 export default function AdminPage({ section = 'moderation' }) {
   const navigate = useNavigate();
+  const currentAdminId = getStoredSession()?.user?.id;
   const tab = validSections.has(section) ? section : 'moderation';
   const [summary, setSummary] = useState({ users: 0, pending: 0, approved: 0, rejected: 0, comments: 0 });
   const [moderation, setModeration] = useState([]);
   const [publications, setPublications] = useState([]);
   const [comments, setComments] = useState([]);
   const [users, setUsers] = useState([]);
+  const [rewards, setRewards] = useState([]);
   const [query, setQuery] = useState('');
   const [publicationType, setPublicationType] = useState('all');
   const [error, setError] = useState('');
   const [rejecting, setRejecting] = useState(null);
+  const [scoring, setScoring] = useState(null);
+  const [scoreForm, setScoreForm] = useState({ points: '', pointReason: '' });
   const [reason, setReason] = useState('');
   const [creatingUser, setCreatingUser] = useState(false);
   const [userForm, setUserForm] = useState(emptyUserForm);
+  const [editingReward, setEditingReward] = useState(null);
+  const [rewardForm, setRewardForm] = useState({ qualificationPoints: 15, minimumActions: 2, firstPlacePrize: '', rafflePrize: '' });
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const [summaryData, moderationData, publicationsData, commentsData, usersData] = await Promise.all([
+    const [summaryData, moderationData, publicationsData, commentsData, usersData, rewardsData] = await Promise.all([
       adminApi.getSummary(),
       adminApi.listModeration(),
       adminApi.listPublications(),
       adminApi.listComments(),
       adminApi.listUsers(),
+      adminApi.listRewards(),
     ]);
     setSummary(summaryData);
     setModeration(moderationData);
     setPublications(publicationsData);
     setComments(commentsData);
     setUsers(usersData);
+    setRewards(rewardsData);
   }, []);
 
   useEffect(() => {
-    loadData().catch((apiError) => setError(apiError.message));
+    loadData().catch((apiError) => setError(apiError.message)).finally(() => setLoading(false));
   }, [loadData]);
 
   const normalizedQuery = query.toLowerCase();
@@ -168,11 +187,45 @@ export default function AdminPage({ section = 'moderation' }) {
     () => users.filter((item) => `${item.name} ${item.email}`.toLowerCase().includes(normalizedQuery)),
     [users, normalizedQuery],
   );
-  async function approve(id) {
+  async function approve(item) {
+    if (item.type === 'responsible_action' && item.ownerId === currentAdminId) {
+      setError('Tu propia acción debe ser evaluada por otro administrador.');
+      return;
+    }
+    if (item.type === 'responsible_action') {
+      if (!Number.isInteger(item.minPoints) || !Number.isInteger(item.maxPoints)) {
+        setError('Esta categoria no tiene un rango de puntos configurado.');
+        return;
+      }
+      setScoring(item);
+      setScoreForm({ points: item.minPoints, pointReason: '' });
+      return;
+    }
+
     setBusy(true);
     setError('');
     try {
-      await adminApi.updateModeration(id, { status: 'Aprobado' });
+      await adminApi.updateModeration(item.id, { status: 'Aprobado' });
+      await loadData();
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function approveWithPoints(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await adminApi.updateModeration(scoring.id, {
+        status: 'Aprobado',
+        points: Number(scoreForm.points),
+        pointReason: scoreForm.pointReason,
+      });
+      setScoring(null);
+      setScoreForm({ points: '', pointReason: '' });
       await loadData();
     } catch (apiError) {
       setError(apiError.message);
@@ -233,6 +286,52 @@ export default function AdminPage({ section = 'moderation' }) {
       setBusy(false);
     }
   }
+
+  function openRewardEditor(period) {
+    setEditingReward(period);
+    setRewardForm({
+      qualificationPoints: period.qualificationPoints,
+      minimumActions: period.minimumActions,
+      firstPlacePrize: period.firstPlacePrize,
+      rafflePrize: period.rafflePrize,
+    });
+  }
+
+  async function saveReward(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await adminApi.updateReward(editingReward.id, {
+        ...rewardForm,
+        qualificationPoints: Number(rewardForm.qualificationPoints),
+        minimumActions: Number(rewardForm.minimumActions),
+      });
+      setEditingReward(null);
+      await loadData();
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function drawReward(period) {
+    if (!window.confirm(`¿Realizar el sorteo de ${period.name}? Esta acción no se puede repetir.`)) return;
+    setBusy(true);
+    setError('');
+    try {
+      const result = await adminApi.drawReward(period.id);
+      window.alert(`Primer puesto: ${result.firstPlace.name}. Ganador del sorteo: ${result.raffleWinner.name}.`);
+      await loadData();
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading) return <LoadingState label="Cargando administración..." />;
 
   return (
     <section className="module-section">
@@ -307,23 +406,25 @@ export default function AdminPage({ section = 'moderation' }) {
           </div>
         )}
 
-        <div className="admin-filterbar">
-          {(tab === 'moderation' || tab === 'publications') && (
-            <div className="segmented-tabs publication-type-tabs" aria-label="Filtrar publicaciones por tipo">
-              {publicationTypeFilters.map((filter) => (
-                <button
-                  className={publicationType === filter.value ? 'active' : ''}
-                  key={filter.value}
-                  type="button"
-                  onClick={() => setPublicationType(filter.value)}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-          )}
-          <label className="search-box admin-search"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar en esta sección" /></label>
-        </div>
+        {tab !== 'rewards' && (
+          <div className="admin-filterbar">
+            {(tab === 'moderation' || tab === 'publications') && (
+              <div className="segmented-tabs publication-type-tabs" aria-label="Filtrar publicaciones por tipo">
+                {publicationTypeFilters.map((filter) => (
+                  <button
+                    className={publicationType === filter.value ? 'active' : ''}
+                    key={filter.value}
+                    type="button"
+                    onClick={() => setPublicationType(filter.value)}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <label className="search-box admin-search"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar en esta sección" /></label>
+          </div>
+        )}
         {error && <p className="form-error">{error}</p>}
 
         {tab === 'moderation' && (
@@ -334,11 +435,17 @@ export default function AdminPage({ section = 'moderation' }) {
                 <div className="admin-row-content">
                   <div className="card-title-row"><strong>{item.title}</strong><StatusBadge status="Pendiente" /></div>
                   <span>{item.owner} · {item.typeLabel ?? typeLabels[item.type] ?? item.type}</span>
+                  {item.type === 'responsible_action' && (
+                    <div className="moderation-action-preview">
+                      {item.evidenceUrl && <img src={item.evidenceUrl} alt="Evidencia presentada" />}
+                      <div><strong>{item.category}</strong><span>Rango permitido: {item.minPoints ?? '-'}–{item.maxPoints ?? '-'} puntos{item.monthlyLimit ? ` · Máximo ${item.monthlyLimit} al mes` : ''}</span></div>
+                    </div>
+                  )}
                   <p>{item.description}</p>
                 </div>
                 <div className="admin-actions">
                   <Link className="button button-secondary" to={publicationPath(item, 'moderation')}><ExternalLink size={16} /> Ver detalle</Link>
-                  <button className="button button-primary" disabled={busy} type="button" onClick={() => approve(item.id)}><Check size={17} /> Aprobar</button>
+                  <button className="button button-primary" disabled={busy || (item.type === 'responsible_action' && item.ownerId === currentAdminId)} type="button" onClick={() => approve(item)}><Check size={17} /> {item.type === 'responsible_action' && item.ownerId === currentAdminId ? 'Requiere otro admin' : item.type === 'responsible_action' ? 'Evaluar y aprobar' : 'Aprobar'}</button>
                   <button className="button button-danger" disabled={busy} type="button" onClick={() => { setRejecting(item); setReason(''); }}><XCircle size={17} /> Rechazar</button>
                 </div>
               </article>
@@ -404,12 +511,66 @@ export default function AdminPage({ section = 'moderation' }) {
             </table>
           </div>
         )}
+
+        {tab === 'rewards' && (
+          <div className="reward-admin-list">
+            {rewards.length === 0 && <div className="empty-state">No hay periodos de recompensas.</div>}
+            {rewards.map((period) => {
+              const hasEnded = new Date(period.endsAt).getTime() <= Date.now();
+              return (
+                <article className="reward-admin-card" key={period.id}>
+                  <div className="reward-admin-heading">
+                    <div>
+                      <span className="eyebrow">{period.status === 'drawn' ? 'Sorteo realizado' : hasEnded ? 'Periodo finalizado' : 'Periodo activo'}</span>
+                      <h2>{period.name}</h2>
+                      <p>{formatDate(period.startsAt)} – {formatDate(period.endsAt)} · {period.participants} participantes</p>
+                    </div>
+                    <StatusBadge status={period.status === 'drawn' ? 'Completado' : hasEnded ? 'Pendiente' : 'Activo'} />
+                  </div>
+                  <div className="reward-admin-grid">
+                    <div><span>Clasificación</span><strong>{period.qualificationPoints} puntos y {period.minimumActions} acciones</strong></div>
+                    <div><span>Primer puesto</span><strong>{period.firstPlacePrize}</strong><small>{period.firstPlaceName || 'Aún sin ganador'}</small></div>
+                    <div><span>Sorteo</span><strong>{period.rafflePrize}</strong><small>{period.raffleWinnerName || 'Aún sin ganador'}</small></div>
+                  </div>
+                  {period.status !== 'drawn' && (
+                    <div className="card-actions">
+                      <button className="button button-secondary" type="button" onClick={() => openRewardEditor(period)}><Pencil size={16} /> Configurar</button>
+                      <button className="button button-primary" disabled={busy || !hasEnded} type="button" onClick={() => drawReward(period)}><Shuffle size={16} /> {hasEnded ? 'Realizar sorteo' : 'Disponible al finalizar'}</button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <Modal open={Boolean(rejecting)} onClose={() => setRejecting(null)} title="Rechazar publicación" description={rejecting?.title}>
         <form className="form-stack" onSubmit={reject}>
           <label className="field"><span>Motivo del rechazo</span><textarea className="textarea" required minLength={5} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Explica qué debe corregir el usuario" /></label>
           <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setRejecting(null)}>Cancelar</button><button className="button button-danger" disabled={busy} type="submit">Confirmar rechazo</button></div>
+        </form>
+      </Modal>
+
+      <Modal open={Boolean(scoring)} onClose={() => setScoring(null)} title="Asignar puntos y aprobar" description={scoring?.title}>
+        <form className="form-stack" onSubmit={approveWithPoints}>
+          {scoring?.evidenceUrl && <img className="scoring-evidence" src={scoring.evidenceUrl} alt="Evidencia de la acción" />}
+          <div className="score-range-callout"><Trophy size={19} /><div><strong>{scoring?.category}</strong><span>El puntaje debe estar entre {scoring?.minPoints} y {scoring?.maxPoints}.</span></div></div>
+          <label className="field"><span>Puntos asignados</span><input className="input" type="number" required min={scoring?.minPoints} max={scoring?.maxPoints} value={scoreForm.points} onChange={(event) => setScoreForm({ ...scoreForm, points: event.target.value })} /></label>
+          <label className="field"><span>Justificación del puntaje</span><textarea className="textarea" required minLength={10} maxLength={1000} value={scoreForm.pointReason} onChange={(event) => setScoreForm({ ...scoreForm, pointReason: event.target.value })} placeholder="Explica el impacto, esfuerzo y calidad de la evidencia." /></label>
+          <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setScoring(null)}>Cancelar</button><button className="button button-primary" disabled={busy} type="submit"><Check size={17} /> Confirmar aprobación</button></div>
+        </form>
+      </Modal>
+
+      <Modal open={Boolean(editingReward)} onClose={() => setEditingReward(null)} title="Configurar reto mensual" description={editingReward?.name}>
+        <form className="form-stack" onSubmit={saveReward}>
+          <div className="modal-form-grid">
+            <label className="field"><span>Puntos para clasificar</span><input className="input" type="number" required min="1" max="500" value={rewardForm.qualificationPoints} onChange={(event) => setRewardForm({ ...rewardForm, qualificationPoints: event.target.value })} /></label>
+            <label className="field"><span>Acciones mínimas</span><input className="input" type="number" required min="1" max="20" value={rewardForm.minimumActions} onChange={(event) => setRewardForm({ ...rewardForm, minimumActions: event.target.value })} /></label>
+          </div>
+          <label className="field"><span>Premio del primer puesto</span><input className="input" required minLength={3} value={rewardForm.firstPlacePrize} onChange={(event) => setRewardForm({ ...rewardForm, firstPlacePrize: event.target.value })} /></label>
+          <label className="field"><span>Premio del sorteo</span><input className="input" required minLength={3} value={rewardForm.rafflePrize} onChange={(event) => setRewardForm({ ...rewardForm, rafflePrize: event.target.value })} /></label>
+          <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setEditingReward(null)}>Cancelar</button><button className="button button-primary" disabled={busy} type="submit"><Gift size={17} /> Guardar configuración</button></div>
         </form>
       </Modal>
 

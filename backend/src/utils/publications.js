@@ -3,9 +3,9 @@ import { validateUrl } from './validation.js';
 
 export async function createPublication(
   client,
-  { owner, type, title, description },
+  { owner, type, title, description, autoApproveAdmin = true },
 ) {
-  const isAdmin = owner.role === 'admin';
+  const isAdmin = owner.role === 'admin' && autoApproveAdmin;
   const result = await client.query(
     `INSERT INTO public.publications (
        owner_id, type, title, description, moderation_status,

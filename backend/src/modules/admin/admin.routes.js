@@ -15,6 +15,9 @@ router.get('/users', asyncHandler(adminController.listUsers));
 router.post('/users', asyncHandler(adminController.createUser));
 router.patch('/users/:id/status', asyncHandler(adminController.updateUserStatus));
 router.get('/summary', asyncHandler(adminController.getSummary));
+router.get('/rewards', asyncHandler(adminController.listRewardPeriods));
+router.patch('/rewards/:id', asyncHandler(adminController.updateRewardPeriod));
+router.post('/rewards/:id/draw', asyncHandler(adminController.drawRewardPeriod));
 
 export default router;
 

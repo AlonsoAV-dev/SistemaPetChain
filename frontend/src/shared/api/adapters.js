@@ -89,6 +89,9 @@ export function adaptResponsibleAction(action) {
     author: action.author ?? action.authorName,
     category: action.category,
     points: action.points,
+    minPoints: action.minPoints,
+    maxPoints: action.maxPoints,
+    scoringReason: action.scoringReason,
     likes: action.likes,
     description: action.description,
     actionDate: action.actionDate,
@@ -97,6 +100,7 @@ export function adaptResponsibleAction(action) {
     moderationStatus: action.moderationStatus,
     rejectionReason: action.rejectionReason,
     createdAt: action.createdAt,
+    reviewedAt: action.reviewedAt,
   };
 }
 
@@ -110,6 +114,12 @@ export function adaptModerationItem(item) {
     type: item.type,
     typeLabel: item.typeLabel,
     description: item.description,
+    ownerId: item.ownerId,
+    category: item.category,
+    evidenceUrl: item.evidenceUrl,
+    minPoints: item.minPoints,
+    maxPoints: item.maxPoints,
+    monthlyLimit: item.monthlyLimit,
     createdAt: item.createdAt,
   };
 }

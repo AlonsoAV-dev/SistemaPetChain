@@ -6,6 +6,7 @@ import * as actionsController from './responsibleActions.controller.js';
 const router = Router();
 
 router.get('/', asyncHandler(actionsController.listActions));
+router.get('/rewards', optionalAuth, asyncHandler(actionsController.getRewards));
 router.get('/mine', requireAuth, asyncHandler(actionsController.listMyActions));
 router.get('/:id', optionalAuth, asyncHandler(actionsController.getAction));
 router.post('/', requireAuth, asyncHandler(actionsController.createAction));

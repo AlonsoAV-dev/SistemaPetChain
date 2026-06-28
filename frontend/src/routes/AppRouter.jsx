@@ -61,6 +61,7 @@ export default function AppRouter() {
         <Route path="admin/publicaciones" element={<ProtectedRoute adminOnly><AdminPage section="publications" /></ProtectedRoute>} />
         <Route path="admin/comentarios" element={<ProtectedRoute adminOnly><AdminPage section="comments" /></ProtectedRoute>} />
         <Route path="admin/usuarios" element={<ProtectedRoute adminOnly><AdminPage section="users" /></ProtectedRoute>} />
+        <Route path="admin/recompensas" element={<ProtectedRoute adminOnly><AdminPage section="rewards" /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/app" replace />} />
     </Routes>

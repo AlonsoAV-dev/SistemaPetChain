@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import { eventsApi } from '../../../shared/api/vetchainApi.js';
 import LinkPreview from '../../../shared/components/LinkPreview.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -27,7 +28,7 @@ export default function EventDetailPage() {
     }
   }
 
-  if (!event) return <div className="empty-state">{error || 'Cargando evento...'}</div>;
+  if (!event) return error ? <div className="empty-state">{error}</div> : <LoadingState label="Cargando evento..." />;
 
   return (
     <section className="detail-page">

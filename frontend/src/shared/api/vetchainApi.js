@@ -123,6 +123,9 @@ export const responsibleActionsApi = {
   async mine() {
     return (await apiRequest('/responsible-actions/mine')).map(adaptResponsibleAction);
   },
+  async rewards() {
+    return apiRequest('/responsible-actions/rewards');
+  },
   async get(id) {
     return adaptResponsibleAction(await apiRequest(`/responsible-actions/${id}`));
   },
@@ -208,6 +211,18 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+  },
+  async listRewards() {
+    return apiRequest('/admin/rewards');
+  },
+  async updateReward(id, payload) {
+    return apiRequest(`/admin/rewards/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  async drawReward(id) {
+    return apiRequest(`/admin/rewards/${id}/draw`, { method: 'POST' });
   },
 };
 

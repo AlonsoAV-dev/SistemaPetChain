@@ -1,6 +1,6 @@
 import { query, withTransaction } from '../../config/database.js';
 import { httpError } from '../../utils/httpError.js';
-import { createPublication, restoreAdminApproval } from '../../utils/publications.js';
+import { createPublication } from '../../utils/publications.js';
 import { optionalText, validateText, validateUrl } from '../../utils/validation.js';
 
 const selectActions = `
@@ -12,16 +12,25 @@ const selectActions = `
     p.moderation_status,
     p.rejection_reason,
     p.points_awarded,
+    p.reviewed_at,
     p.created_at,
     u.name AS author_name,
     rap.category,
     rap.action_date,
     rap.location,
     rap.evidence_url,
+    point_rule.min_points,
+    point_rule.max_points,
+    (SELECT mr.scoring_reason
+     FROM public.moderation_reviews mr
+     WHERE mr.publication_id = p.id AND mr.decision = 'approved'
+     ORDER BY mr.created_at DESC
+     LIMIT 1) AS scoring_reason,
     (SELECT count(*)::integer FROM public.publication_likes pl WHERE pl.publication_id = p.id) AS likes
   FROM public.publications p
   JOIN public.users u ON u.id = p.owner_id
   JOIN public.responsible_action_publications rap ON rap.publication_id = p.id
+  LEFT JOIN public.responsible_action_point_rules point_rule ON point_rule.category = rap.category
 `;
 
 function mapAction(row) {
@@ -33,6 +42,9 @@ function mapAction(row) {
     category: row.category,
     description: row.description,
     points: row.points_awarded,
+    minPoints: row.min_points,
+    maxPoints: row.max_points,
+    scoringReason: row.scoring_reason,
     likes: row.likes,
     actionDate: row.action_date,
     location: row.location,
@@ -40,6 +52,7 @@ function mapAction(row) {
     moderationStatus: row.moderation_status,
     rejectionReason: row.rejection_reason,
     createdAt: row.created_at,
+    reviewedAt: row.reviewed_at,
   };
 }
 
@@ -93,6 +106,15 @@ export async function createAction(payload, user) {
   const actionDate = payload.actionDate ?? new Date().toISOString().slice(0, 10);
   const location = optionalText(payload.location, 'Ubicacion', 180);
   const evidenceUrl = validateUrl(payload.evidenceUrl, 'URL de evidencia');
+  if (!evidenceUrl) throw httpError(400, 'Debes adjuntar una evidencia fotografica.');
+
+  const categoryRule = await query(
+    `SELECT category
+     FROM public.responsible_action_point_rules
+     WHERE category = $1 AND enabled = true AND available_for_submission = true`,
+    [category],
+  );
+  if (!categoryRule.rows[0]) throw httpError(400, 'Selecciona una categoria de accion valida.');
 
   return withTransaction(async (client) => {
     const publicationId = await createPublication(client, {
@@ -100,6 +122,7 @@ export async function createAction(payload, user) {
       type: 'responsible_action',
       title,
       description,
+      autoApproveAdmin: false,
     });
 
     await client.query(
@@ -118,7 +141,7 @@ export async function createAction(payload, user) {
 export async function updateAction(id, payload, user) {
   return withTransaction(async (client) => {
     const current = await client.query(
-      `${selectActions} WHERE p.id = $1 AND p.owner_id = $2 FOR UPDATE`,
+      `${selectActions} WHERE p.id = $1 AND p.owner_id = $2 FOR UPDATE OF p, rap`,
       [id, user.id],
     );
 
@@ -135,6 +158,16 @@ export async function updateAction(id, payload, user) {
       payload.description === undefined
         ? row.description
         : validateText(payload.description, 'Descripcion', { min: 10, max: 3000 });
+
+    if (payload.category) {
+      const categoryRule = await client.query(
+        `SELECT category
+         FROM public.responsible_action_point_rules
+         WHERE category = $1 AND enabled = true AND available_for_submission = true`,
+        [validateText(payload.category, 'Categoria', { min: 2, max: 80 })],
+      );
+      if (!categoryRule.rows[0]) throw httpError(400, 'Selecciona una categoria de accion valida.');
+    }
 
     await client.query(
       `UPDATE public.publications
@@ -162,8 +195,6 @@ export async function updateAction(id, payload, user) {
           : validateUrl(payload.evidenceUrl, 'URL de evidencia'),
       ],
     );
-    await restoreAdminApproval(client, id, user);
-
     const result = await client.query(`${selectActions} WHERE p.id = $1`, [id]);
     return mapAction(result.rows[0]);
   });

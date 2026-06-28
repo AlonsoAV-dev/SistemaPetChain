@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LockKeyhole, Pencil, Save, X } from 'lucide-react';
 import { authApi, mediaApi } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 const emptyPasswordForm = {
   currentPassword: '',
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const displayName = profile?.name ?? 'Usuario';
   const avatarUrl = profile?.avatarUrl ?? '';
@@ -51,6 +53,8 @@ export default function ProfilePage() {
       });
     }).catch((apiError) => {
       if (isMounted) setError(apiError.message ?? 'No se pudo cargar el perfil.');
+    }).finally(() => {
+      if (isMounted) setLoading(false);
     });
 
     return () => {
@@ -141,6 +145,8 @@ export default function ProfilePage() {
       setIsChangingPassword(false);
     }
   }
+
+  if (loading) return <LoadingState label="Cargando tu perfil..." />;
 
   return (
     <section className="profile-page">

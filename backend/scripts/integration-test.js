@@ -121,8 +121,9 @@ try {
   const action = await actionsService.createAction(
     {
       title: 'Limpieza comunitaria',
-      category: 'Medio ambiente',
+      category: 'Limpieza de espacios para animales',
       description: 'Limpieza del parque y apoyo a mascotas de la zona.',
+      evidenceUrl: 'https://example.com/limpieza-evidence.jpg',
     },
     user,
   );
@@ -134,7 +135,11 @@ try {
 
   const approved = await adminService.updateModerationItem(
     action.id,
-    { status: 'Aprobado' },
+    {
+      status: 'Aprobado',
+      points: 10,
+      pointReason: 'Evidencia clara de una jornada comunitaria con impacto verificable.',
+    },
     admin.id,
   );
   assert.equal(approved.status, 'Aprobado');
@@ -161,7 +166,15 @@ try {
   assert.equal(edited.moderationStatus, 'pending');
   assert.equal((await actionsService.getActions()).length, publicActionsBefore);
 
-  await adminService.updateModerationItem(action.id, { status: 'Aprobado' }, admin.id);
+  await adminService.updateModerationItem(
+    action.id,
+    {
+      status: 'Aprobado',
+      points: 11,
+      pointReason: 'La evidencia actualizada muestra continuidad y un impacto comunitario alto.',
+    },
+    admin.id,
+  );
 
   const points = await query(
     `SELECT count(*)::integer AS transactions, sum(points)::integer AS points
@@ -169,7 +182,8 @@ try {
      WHERE publication_id = $1`,
     [action.id],
   );
-  assert.equal(points.rows[0].transactions, 1);
+  assert.equal(points.rows[0].transactions, 3);
+  assert.equal(points.rows[0].points, 11);
 
   const adoption = await adoptionsService.createAdoptionPet(
     {
@@ -264,7 +278,7 @@ try {
     admin,
   );
   assert.equal(adminPublication.moderationStatus, 'approved');
-  assert.equal(points.rows[0].points, 20);
+  assert.equal(points.rows[0].points, 11);
 
   const adminSummary = await adminService.getSummary();
   assert.equal(adminSummary.comments >= 1, true);

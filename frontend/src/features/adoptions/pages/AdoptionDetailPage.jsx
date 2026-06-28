@@ -7,6 +7,7 @@ import CommentsPanel from '../../../shared/components/CommentsPanel.jsx';
 import Modal from '../../../shared/components/Modal.jsx';
 import PhotoGallery from '../../../shared/components/PhotoGallery.jsx';
 import StatusBadge from '../../../shared/components/StatusBadge.jsx';
+import LoadingState from '../../../shared/components/LoadingState.jsx';
 
 const emptyRequest = {
   fullName: '',
@@ -92,7 +93,7 @@ export default function AdoptionDetailPage({ publicView = false }) {
     }
   }
 
-  if (!pet) return <div className="empty-state">{error || 'Cargando publicación...'}</div>;
+  if (!pet) return error ? <div className="empty-state">{error}</div> : <LoadingState label="Cargando publicación de adopción..." />;
 
   function openEdit() {
     setEditImageFiles([]);

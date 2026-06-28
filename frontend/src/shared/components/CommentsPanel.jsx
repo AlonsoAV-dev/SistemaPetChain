@@ -2,6 +2,7 @@ import { MessageCircle, Send, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getStoredSession } from '../api/httpClient.js';
 import { commentsApi } from '../api/vetchainApi.js';
+import LoadingState from './LoadingState.jsx';
 
 export default function CommentsPanel({ publicationId }) {
   const session = getStoredSession();
@@ -50,7 +51,7 @@ export default function CommentsPanel({ publicationId }) {
         <MessageCircle size={19} aria-hidden="true" />
         <h3>Comentarios ({comments.length})</h3>
       </div>
-      {loading && <p className="muted-copy">Cargando comentarios...</p>}
+      {loading && <LoadingState compact label="Cargando comentarios..." />}
       {!loading && comments.length === 0 && <p className="muted-copy">Todavía no hay comentarios.</p>}
       <div className="comment-list">
         {comments.map((comment) => (
