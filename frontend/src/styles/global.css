@@ -2809,6 +2809,97 @@ body.modal-open {
   padding: 20px;
 }
 
+.qualified-count {
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+  padding: 8px 12px;
+}
+
+.reward-ranking-admin-card .admin-table-wrap {
+  margin-top: 18px;
+}
+
+.reward-scores-card .admin-table-wrap {
+  margin-top: 18px;
+}
+
+.reward-rules-card .admin-table-wrap {
+  margin-top: 18px;
+}
+
+.reward-rules-table th:nth-child(2),
+.reward-rules-table td:nth-child(2),
+.reward-rules-table th:nth-child(3),
+.reward-rules-table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+.scoring-criteria-guide {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+  border-radius: 12px;
+  background: var(--color-surface-muted);
+  padding: 14px;
+}
+
+.scoring-criteria-guide strong,
+.scoring-criteria-guide span {
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.scoring-criteria-guide span {
+  color: var(--color-muted);
+}
+
+.scoring-rules-details {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  padding: 12px 14px;
+}
+
+.scoring-rules-details summary {
+  cursor: pointer;
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.scoring-rules-list {
+  display: grid;
+  gap: 0;
+  margin-top: 10px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.scoring-rules-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--color-border);
+  padding: 9px 0;
+}
+
+.scoring-rules-list span {
+  color: var(--color-muted);
+}
+
+.scoring-rules-list strong {
+  flex: 0 0 auto;
+  color: var(--color-primary-dark);
+}
+
+.reward-ranking-table td > small {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-muted);
+}
+
 .reward-admin-heading {
   display: flex;
   align-items: flex-start;
@@ -2856,6 +2947,10 @@ body.modal-open {
     grid-template-columns: 1fr 1fr;
   }
 
+  .scoring-criteria-guide {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .action-progress-card {
     grid-column: 1 / -1;
   }
@@ -2867,7 +2962,8 @@ body.modal-open {
 
 @media (max-width: 760px) {
   .action-reward-overview,
-  .reward-admin-grid {
+  .reward-admin-grid,
+  .scoring-criteria-guide {
     grid-template-columns: 1fr;
   }
 

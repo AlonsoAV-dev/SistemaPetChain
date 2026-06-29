@@ -176,14 +176,29 @@ try {
     admin.id,
   );
 
+  const correctedPoints = await adminService.correctPublicationPoints(
+    action.id,
+    {
+      points: 12,
+      reason: 'Correccion de prueba por mayor impacto comprobado en la evidencia.',
+    },
+    admin.id,
+  );
+  assert.equal(correctedPoints.previousPoints, 11);
+  assert.equal(correctedPoints.pointsAwarded, 12);
+
+  const correctedAction = await actionsService.getAction(action.id, user);
+  assert.equal(correctedAction.points, 12);
+  assert.match(correctedAction.scoringReason, /mayor impacto/i);
+
   const points = await query(
     `SELECT count(*)::integer AS transactions, sum(points)::integer AS points
      FROM public.point_transactions
      WHERE publication_id = $1`,
     [action.id],
   );
-  assert.equal(points.rows[0].transactions, 3);
-  assert.equal(points.rows[0].points, 11);
+  assert.equal(points.rows[0].transactions, 4);
+  assert.equal(points.rows[0].points, 12);
 
   const adoption = await adoptionsService.createAdoptionPet(
     {
@@ -278,7 +293,7 @@ try {
     admin,
   );
   assert.equal(adminPublication.moderationStatus, 'approved');
-  assert.equal(points.rows[0].points, 11);
+  assert.equal(points.rows[0].points, 12);
 
   const adminSummary = await adminService.getSummary();
   assert.equal(adminSummary.comments >= 1, true);

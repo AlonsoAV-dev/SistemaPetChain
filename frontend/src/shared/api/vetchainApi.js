@@ -191,6 +191,12 @@ export const adminApi = {
     ).toString();
     return apiRequest(`/admin/publications${search ? `?${search}` : ''}`);
   },
+  async correctPublicationPoints(id, payload) {
+    return apiRequest(`/admin/publications/${id}/points`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
   async listComments() {
     return apiRequest('/admin/comments');
   },

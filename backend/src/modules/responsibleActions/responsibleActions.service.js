@@ -21,11 +21,18 @@ const selectActions = `
     rap.evidence_url,
     point_rule.min_points,
     point_rule.max_points,
-    (SELECT mr.scoring_reason
+    COALESCE(
+      (SELECT correction.reason
+       FROM public.point_corrections correction
+       WHERE correction.publication_id = p.id
+       ORDER BY correction.created_at DESC
+       LIMIT 1),
+      (SELECT mr.scoring_reason
      FROM public.moderation_reviews mr
      WHERE mr.publication_id = p.id AND mr.decision = 'approved'
      ORDER BY mr.created_at DESC
-     LIMIT 1) AS scoring_reason,
+     LIMIT 1)
+    ) AS scoring_reason,
     (SELECT count(*)::integer FROM public.publication_likes pl WHERE pl.publication_id = p.id) AS likes
   FROM public.publications p
   JOIN public.users u ON u.id = p.owner_id

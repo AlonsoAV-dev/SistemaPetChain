@@ -1,4 +1,4 @@
-import { query } from '../../config/database.js';
+import { query, withTransaction } from '../../config/database.js';
 import { httpError } from '../../utils/httpError.js';
 import { mapPublicationStatus, mapUser } from '../../utils/mappers.js';
 import { hashPassword } from '../../utils/password.js';
@@ -126,11 +126,15 @@ export async function listPublications({ type, status, query: search } = {}) {
   const result = await query(
     `SELECT
        p.id, p.type, p.title, p.description, p.moderation_status,
-       p.rejection_reason, p.points_awarded, p.created_at, p.reviewed_at,
+       p.owner_id, p.rejection_reason, p.points_awarded, p.created_at, p.reviewed_at,
        u.name AS owner_name, u.email AS owner_email,
+       rap.category, action_rule.min_points, action_rule.max_points,
        (SELECT count(*)::integer FROM public.comments c WHERE c.publication_id = p.id) AS comments_count
      FROM public.publications p
      JOIN public.users u ON u.id = p.owner_id
+     LEFT JOIN public.responsible_action_publications rap ON rap.publication_id = p.id
+     LEFT JOIN public.responsible_action_point_rules action_rule
+       ON action_rule.category = rap.category AND action_rule.enabled = true
      ${filters.length ? `WHERE ${filters.join(' AND ')}` : ''}
      ORDER BY p.created_at DESC`,
     values,
@@ -141,6 +145,10 @@ export async function listPublications({ type, status, query: search } = {}) {
     type: row.type,
     title: row.title,
     description: row.description,
+    ownerId: row.owner_id,
+    category: row.category,
+    minPoints: row.min_points,
+    maxPoints: row.max_points,
     status: mapPublicationStatus(row.moderation_status),
     moderationStatus: row.moderation_status,
     rejectionReason: row.rejection_reason,
@@ -197,6 +205,74 @@ export async function deleteComment(id) {
     [id],
   );
   if (!result.rows[0]) throw httpError(404, 'Comentario no encontrado.');
+}
+
+export async function correctPublicationPoints(id, payload, adminId) {
+  const newPoints = Number(payload.points);
+  const reason = validateText(payload.reason, 'Motivo de la correccion', { min: 10, max: 1000 });
+  if (!Number.isInteger(newPoints)) throw httpError(400, 'Los puntos deben ser un numero entero.');
+
+  return withTransaction(async (client) => {
+    const result = await client.query(
+      `SELECT
+         p.id, p.owner_id, p.title, p.points_awarded, p.moderation_status,
+         rap.category, rule.min_points, rule.max_points
+       FROM public.publications p
+       JOIN public.responsible_action_publications rap ON rap.publication_id = p.id
+       JOIN public.responsible_action_point_rules rule ON rule.category = rap.category AND rule.enabled = true
+       WHERE p.id = $1 AND p.type = 'responsible_action'
+       FOR UPDATE OF p`,
+      [id],
+    );
+    const publication = result.rows[0];
+    if (!publication) throw httpError(404, 'Accion responsable no encontrada.');
+    if (publication.moderation_status !== 'approved') {
+      throw httpError(409, 'Solo se pueden corregir puntos de acciones aprobadas.');
+    }
+    if (publication.owner_id === adminId) {
+      throw httpError(403, 'Otro administrador debe corregir los puntos de tu propia accion.');
+    }
+    if (newPoints < publication.min_points || newPoints > publication.max_points) {
+      throw httpError(400, `Los puntos deben estar entre ${publication.min_points} y ${publication.max_points}.`);
+    }
+    if (newPoints === publication.points_awarded) {
+      throw httpError(400, 'El nuevo puntaje debe ser diferente al actual.');
+    }
+
+    const difference = newPoints - publication.points_awarded;
+    await client.query(
+      `UPDATE public.publications SET points_awarded = $2 WHERE id = $1`,
+      [id, newPoints],
+    );
+    await client.query(
+      `INSERT INTO public.point_corrections (
+         publication_id, admin_id, previous_points, new_points, reason
+       ) VALUES ($1, $2, $3, $4, $5)`,
+      [id, adminId, publication.points_awarded, newPoints, reason],
+    );
+    await client.query(
+      `INSERT INTO public.point_transactions (
+         user_id, publication_id, transaction_type, points, description, created_by
+       ) VALUES ($1, $2, 'manual_adjustment', $3, $4, $5)`,
+      [publication.owner_id, id, difference, `Correccion de puntaje: ${reason}`, adminId],
+    );
+    await client.query(
+      `INSERT INTO public.notifications (
+         recipient_id, actor_id, publication_id, notification_type, title, message
+       ) VALUES ($1, $2, $3, 'points_corrected', 'Puntaje corregido', $4)`,
+      [publication.owner_id, adminId, id, `Tu accion ahora tiene ${newPoints} puntos. ${reason}`],
+    );
+
+    return {
+      id,
+      title: publication.title,
+      category: publication.category,
+      previousPoints: publication.points_awarded,
+      pointsAwarded: newPoints,
+      difference,
+      reason,
+    };
+  });
 }
 
 export async function listUsers({ query: search } = {}) {

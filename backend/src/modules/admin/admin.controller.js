@@ -27,6 +27,10 @@ export async function deleteComment(req, res) {
   res.status(204).end();
 }
 
+export async function correctPublicationPoints(req, res) {
+  res.json({ data: await adminService.correctPublicationPoints(req.params.id, req.body, req.user.id) });
+}
+
 export async function listUsers(req, res) {
   res.json({ data: await adminService.listUsers(req.query) });
 }

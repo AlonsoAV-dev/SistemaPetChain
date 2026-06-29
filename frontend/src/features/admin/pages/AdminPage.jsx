@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { adminApi } from '../../../shared/api/vetchainApi.js';
+import { adminApi, responsibleActionsApi } from '../../../shared/api/vetchainApi.js';
 import { getStoredSession } from '../../../shared/api/httpClient.js';
 import Modal from '../../../shared/components/Modal.jsx';
 import StatCard from '../../../shared/components/StatCard.jsx';
@@ -126,6 +126,7 @@ export default function AdminPage({ section = 'moderation' }) {
   const [comments, setComments] = useState([]);
   const [users, setUsers] = useState([]);
   const [rewards, setRewards] = useState([]);
+  const [rewardOverview, setRewardOverview] = useState({ period: null, ranking: [] });
   const [query, setQuery] = useState('');
   const [publicationType, setPublicationType] = useState('all');
   const [error, setError] = useState('');
@@ -137,17 +138,20 @@ export default function AdminPage({ section = 'moderation' }) {
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [editingReward, setEditingReward] = useState(null);
   const [rewardForm, setRewardForm] = useState({ qualificationPoints: 15, minimumActions: 2, firstPlacePrize: '', rafflePrize: '' });
+  const [correctingPoints, setCorrectingPoints] = useState(null);
+  const [correctionForm, setCorrectionForm] = useState({ points: '', reason: '' });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const [summaryData, moderationData, publicationsData, commentsData, usersData, rewardsData] = await Promise.all([
+    const [summaryData, moderationData, publicationsData, commentsData, usersData, rewardsData, rewardOverviewData] = await Promise.all([
       adminApi.getSummary(),
       adminApi.listModeration(),
       adminApi.listPublications(),
       adminApi.listComments(),
       adminApi.listUsers(),
       adminApi.listRewards(),
+      responsibleActionsApi.rewards(),
     ]);
     setSummary(summaryData);
     setModeration(moderationData);
@@ -155,6 +159,7 @@ export default function AdminPage({ section = 'moderation' }) {
     setComments(commentsData);
     setUsers(usersData);
     setRewards(rewardsData);
+    setRewardOverview(rewardOverviewData);
   }, []);
 
   useEffect(() => {
@@ -187,6 +192,10 @@ export default function AdminPage({ section = 'moderation' }) {
     () => users.filter((item) => `${item.name} ${item.email}`.toLowerCase().includes(normalizedQuery)),
     [users, normalizedQuery],
   );
+  const classifiedUsers = rewardOverview.ranking.filter((entry) => entry.qualified);
+  const scoredActions = publications
+    .filter((item) => item.type === 'responsible_action' && item.moderationStatus === 'approved')
+    .sort((a, b) => new Date(b.reviewedAt ?? b.createdAt) - new Date(a.reviewedAt ?? a.createdAt));
   async function approve(item) {
     if (item.type === 'responsible_action' && item.ownerId === currentAdminId) {
       setError('Tu propia acción debe ser evaluada por otro administrador.');
@@ -331,6 +340,30 @@ export default function AdminPage({ section = 'moderation' }) {
     }
   }
 
+  function openPointCorrection(publication) {
+    setCorrectingPoints(publication);
+    setCorrectionForm({ points: publication.pointsAwarded, reason: '' });
+  }
+
+  async function correctPoints(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await adminApi.correctPublicationPoints(correctingPoints.id, {
+        points: Number(correctionForm.points),
+        reason: correctionForm.reason,
+      });
+      setCorrectingPoints(null);
+      setCorrectionForm({ points: '', reason: '' });
+      await loadData();
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading) return <LoadingState label="Cargando administración..." />;
 
   return (
@@ -466,7 +499,7 @@ export default function AdminPage({ section = 'moderation' }) {
                     <td><StatusBadge status={item.status} />{item.rejectionReason && <small>{item.rejectionReason}</small>}</td>
                     <td>{item.commentsCount}</td>
                     <td>{item.pointsAwarded}</td>
-                    <td><Link className="button button-secondary" to={publicationPath(item, 'publications')}><ExternalLink size={15} /> Ver</Link></td>
+                    <td><div className="inline-actions"><Link className="button button-secondary" to={publicationPath(item, 'publications')}><ExternalLink size={15} /> Ver</Link>{item.type === 'responsible_action' && item.moderationStatus === 'approved' && <button className="button button-secondary" disabled={item.ownerId === currentAdminId} title={item.ownerId === currentAdminId ? 'Otro administrador debe corregir tu propia acción' : 'Corregir puntaje'} type="button" onClick={() => openPointCorrection(item)}><Pencil size={15} /> Corregir puntos</button>}</div></td>
                   </tr>
                 ))}
               </tbody>
@@ -514,6 +547,98 @@ export default function AdminPage({ section = 'moderation' }) {
 
         {tab === 'rewards' && (
           <div className="reward-admin-list">
+            <section className="reward-admin-card reward-ranking-admin-card">
+              <div className="reward-admin-heading">
+                <div>
+                  <span className="eyebrow">Competencia actual</span>
+                  <h2>Ranking mensual</h2>
+                  <p>{rewardOverview.period ? `Clasifican desde ${rewardOverview.period.qualificationPoints} puntos y ${rewardOverview.period.minimumActions} acciones aprobadas.` : 'Cargando reglas del periodo.'}</p>
+                </div>
+                <strong className="qualified-count">{classifiedUsers.length} clasificados</strong>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table reward-ranking-table">
+                  <thead><tr><th>Posición</th><th>Usuario</th><th>Acciones</th><th>Categorías</th><th>Puntos</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    {rewardOverview.ranking.map((entry) => {
+                      const pointsRemaining = Math.max(0, (rewardOverview.period?.qualificationPoints ?? 15) - entry.points);
+                      const actionsRemaining = Math.max(0, (rewardOverview.period?.minimumActions ?? 2) - entry.approvedActions);
+                      return (
+                        <tr key={entry.userId}>
+                          <td><strong>#{entry.position}</strong>{entry.position === 1 && <small>Líder actual</small>}</td>
+                          <td><strong>{entry.name}</strong></td>
+                          <td>{entry.approvedActions}</td>
+                          <td>{entry.distinctCategories}</td>
+                          <td><strong>{entry.points} pts</strong></td>
+                          <td>{entry.qualified ? <StatusBadge status="Clasificado" /> : <><StatusBadge status="En progreso" /><small>{pointsRemaining > 0 ? `Faltan ${pointsRemaining} pts` : ''}{pointsRemaining > 0 && actionsRemaining > 0 ? ' · ' : ''}{actionsRemaining > 0 ? `Faltan ${actionsRemaining} acciones` : ''}</small></>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {rewardOverview.ranking.length === 0 && <div className="empty-state">Todavía no hay usuarios en el ranking mensual.</div>}
+            </section>
+            <section className="reward-admin-card reward-rules-card">
+              <div className="reward-admin-heading">
+                <div>
+                  <span className="eyebrow">Guía para evaluadores</span>
+                  <h2>Rangos de puntaje por categoría</h2>
+                  <p>Usa estos rangos al aprobar una acción. El límite indica cuántas acciones de esa categoría puede puntuar cada usuario durante el mes.</p>
+                </div>
+                <strong className="qualified-count">{rewardOverview.rules?.length ?? 0} categorías</strong>
+              </div>
+              <div className="scoring-criteria-guide">
+                <strong>Cómo elegir dentro del rango</strong>
+                <span>Mínimo: evidencia válida y acción básica.</span>
+                <span>Intermedio: mayor esfuerzo, continuidad o beneficio.</span>
+                <span>Máximo: impacto sobresaliente y evidencia clara.</span>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table reward-rules-table">
+                  <thead><tr><th>Categoría</th><th>Puntaje permitido</th><th>Límite mensual por usuario</th></tr></thead>
+                  <tbody>
+                    {(rewardOverview.rules ?? []).map((rule) => (
+                      <tr key={rule.category}>
+                        <td><strong>{rule.category}</strong></td>
+                        <td><strong>{rule.minPoints}–{rule.maxPoints} pts</strong></td>
+                        <td>{rule.monthlyLimit ? `${rule.monthlyLimit} acciones` : 'Sin límite'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {(rewardOverview.rules?.length ?? 0) === 0 && <div className="empty-state">No hay rangos de puntaje configurados.</div>}
+            </section>
+            <section className="reward-admin-card reward-scores-card">
+              <div className="reward-admin-heading">
+                <div>
+                  <span className="eyebrow">Auditoría de puntos</span>
+                  <h2>Puntajes asignados</h2>
+                  <p>Consulta cada acción aprobada y corrige su puntaje cuando sea necesario.</p>
+                </div>
+                <strong className="qualified-count">{scoredActions.length} acciones</strong>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table reward-scores-table">
+                  <thead><tr><th>Acción</th><th>Usuario</th><th>Categoría</th><th>Rango</th><th>Puntaje</th><th>Revisión</th><th></th></tr></thead>
+                  <tbody>
+                    {scoredActions.map((item) => (
+                      <tr key={item.id}>
+                        <td><strong>{item.title}</strong></td>
+                        <td><strong>{item.ownerName}</strong><small>{item.ownerEmail}</small></td>
+                        <td>{item.category}</td>
+                        <td>{item.minPoints}–{item.maxPoints}</td>
+                        <td><strong>{item.pointsAwarded} pts</strong></td>
+                        <td>{formatDate(item.reviewedAt)}</td>
+                        <td><button className="button button-secondary" disabled={item.ownerId === currentAdminId} title={item.ownerId === currentAdminId ? 'Otro administrador debe corregir tu propia acción' : 'Corregir puntaje'} type="button" onClick={() => openPointCorrection(item)}><Pencil size={15} /> Corregir</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {scoredActions.length === 0 && <div className="empty-state">Todavía no existen acciones con puntaje asignado.</div>}
+            </section>
             {rewards.length === 0 && <div className="empty-state">No hay periodos de recompensas.</div>}
             {rewards.map((period) => {
               const hasEnded = new Date(period.endsAt).getTime() <= Date.now();
@@ -556,6 +681,17 @@ export default function AdminPage({ section = 'moderation' }) {
         <form className="form-stack" onSubmit={approveWithPoints}>
           {scoring?.evidenceUrl && <img className="scoring-evidence" src={scoring.evidenceUrl} alt="Evidencia de la acción" />}
           <div className="score-range-callout"><Trophy size={19} /><div><strong>{scoring?.category}</strong><span>El puntaje debe estar entre {scoring?.minPoints} y {scoring?.maxPoints}.</span></div></div>
+          <details className="scoring-rules-details">
+            <summary>Consultar todos los rangos de puntaje</summary>
+            <div className="scoring-rules-list">
+              {(rewardOverview.rules ?? []).map((rule) => (
+                <div key={rule.category}>
+                  <span>{rule.category}</span>
+                  <strong>{rule.minPoints}–{rule.maxPoints} pts</strong>
+                </div>
+              ))}
+            </div>
+          </details>
           <label className="field"><span>Puntos asignados</span><input className="input" type="number" required min={scoring?.minPoints} max={scoring?.maxPoints} value={scoreForm.points} onChange={(event) => setScoreForm({ ...scoreForm, points: event.target.value })} /></label>
           <label className="field"><span>Justificación del puntaje</span><textarea className="textarea" required minLength={10} maxLength={1000} value={scoreForm.pointReason} onChange={(event) => setScoreForm({ ...scoreForm, pointReason: event.target.value })} placeholder="Explica el impacto, esfuerzo y calidad de la evidencia." /></label>
           <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setScoring(null)}>Cancelar</button><button className="button button-primary" disabled={busy} type="submit"><Check size={17} /> Confirmar aprobación</button></div>
@@ -571,6 +707,15 @@ export default function AdminPage({ section = 'moderation' }) {
           <label className="field"><span>Premio del primer puesto</span><input className="input" required minLength={3} value={rewardForm.firstPlacePrize} onChange={(event) => setRewardForm({ ...rewardForm, firstPlacePrize: event.target.value })} /></label>
           <label className="field"><span>Premio del sorteo</span><input className="input" required minLength={3} value={rewardForm.rafflePrize} onChange={(event) => setRewardForm({ ...rewardForm, rafflePrize: event.target.value })} /></label>
           <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setEditingReward(null)}>Cancelar</button><button className="button button-primary" disabled={busy} type="submit"><Gift size={17} /> Guardar configuración</button></div>
+        </form>
+      </Modal>
+
+      <Modal open={Boolean(correctingPoints)} onClose={() => setCorrectingPoints(null)} title="Corregir puntaje" description={correctingPoints?.title}>
+        <form className="form-stack" onSubmit={correctPoints}>
+          <div className="score-range-callout"><Trophy size={19} /><div><strong>{correctingPoints?.category}</strong><span>Puntaje actual: {correctingPoints?.pointsAwarded}. Rango permitido: {correctingPoints?.minPoints}–{correctingPoints?.maxPoints}.</span></div></div>
+          <label className="field"><span>Nuevo puntaje</span><input className="input" type="number" required min={correctingPoints?.minPoints} max={correctingPoints?.maxPoints} value={correctionForm.points} onChange={(event) => setCorrectionForm({ ...correctionForm, points: event.target.value })} /></label>
+          <label className="field"><span>Motivo de la corrección</span><textarea className="textarea" required minLength={10} maxLength={1000} value={correctionForm.reason} onChange={(event) => setCorrectionForm({ ...correctionForm, reason: event.target.value })} placeholder="Explica por qué se modifica el puntaje asignado." /></label>
+          <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setCorrectingPoints(null)}>Cancelar</button><button className="button button-primary" disabled={busy} type="submit">Guardar corrección</button></div>
         </form>
       </Modal>
 

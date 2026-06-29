@@ -21,6 +21,7 @@ Express.
 11. Ejecuta `009_animal_action_categories_and_threshold.sql`.
 12. Ejecuta `010_raffle_threshold_and_seed_balances.sql`.
 13. Ejecuta `011_sync_current_ranking_scores.sql`.
+14. Ejecuta `012_point_corrections.sql`.
 
 El script crea:
 
